@@ -36,7 +36,7 @@ suite('WASM Bridge Test Suite (TS fallback)', () => {
 
     test('parseBlame — single blame entry', () => {
         const raw = [
-            'abc1234567890abcdef1234567890abcdef123456 1 1 1',
+            'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 1 1 1',
             'author Test Author',
             'author-mail <test@example.com>',
             'author-time 1700000000',
