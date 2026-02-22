@@ -7,6 +7,7 @@ export class FileListPane {
     private body: HTMLElement;
     private leftSha: string = '';
     private rightSha: string = '';
+    private selectedEntry: HTMLElement | null = null;
 
     constructor(
         private container: HTMLElement,
@@ -51,6 +52,11 @@ export class FileListPane {
             const entry = document.createElement('div');
             entry.className = 'file-list-entry';
             entry.addEventListener('click', () => {
+                if (this.selectedEntry) {
+                    this.selectedEntry.classList.remove('selected');
+                }
+                entry.classList.add('selected');
+                this.selectedEntry = entry;
                 this.onFileClick(file.path, this.leftSha, this.rightSha);
             });
 
@@ -87,6 +93,7 @@ export class FileListPane {
     clear(): void {
         this.header.textContent = '';
         this.body.innerHTML = '';
+        this.selectedEntry = null;
         const empty = document.createElement('div');
         empty.className = 'file-list-empty';
         empty.textContent = 'Select a commit to see changed files';

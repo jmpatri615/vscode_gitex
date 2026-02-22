@@ -254,6 +254,16 @@ body {
     background: var(--vscode-list-hoverBackground, rgba(90, 93, 94, 0.31));
 }
 
+.file-list-entry.selected {
+    background: var(--vscode-list-activeSelectionBackground, #04395e);
+    color: var(--vscode-list-activeSelectionForeground, #ffffff);
+}
+
+.file-list-entry.selected:hover {
+    background: var(--vscode-list-activeSelectionBackground, #04395e);
+    color: var(--vscode-list-activeSelectionForeground, #ffffff);
+}
+
 .file-status {
     font-size: 11px;
     font-weight: 600;
