@@ -75,6 +75,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const graphViewProvider = new GraphViewProvider(
         context.extensionUri,
         graphDataProvider,
+        gitCommands,
         async (sha: string) => {
             if (isVirtualSha(sha)) {
                 await handleVirtualNodeClick(sha, gitCommands, diffService);

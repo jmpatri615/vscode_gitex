@@ -161,13 +161,17 @@ export type WebviewIncomingMessage =
     | { type: 'contextMenu'; sha: string }
     | { type: 'filterChange'; field: FilterOptions['field']; pattern: string }
     | { type: 'dateFilterChange'; after: number; before: number }
-    | { type: 'saveState'; state: unknown };
+    | { type: 'saveState'; state: unknown }
+    | { type: 'fileClick'; path: string; leftSha: string; rightSha: string }
+    | { type: 'selectionCleared' };
 
 export type WebviewOutgoingMessage =
     | { type: 'layoutData'; data: LayoutResult; append: boolean }
     | { type: 'updateTotalCount'; count: number }
     | { type: 'themeChanged' }
-    | { type: 'setSelection'; sha: string };
+    | { type: 'setSelection'; sha: string }
+    | { type: 'fileListData'; files: ChangedFile[]; leftRef: string; rightRef: string; leftSha: string; rightSha: string }
+    | { type: 'fileListClear' };
 
 export type CommitDetailIncomingMessage =
     | { type: 'openDiff'; sha: string; path: string }

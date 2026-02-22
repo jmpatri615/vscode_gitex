@@ -15,6 +15,8 @@ import { InteractionHandler } from './interactionHandler';
 import { FilterBar } from './filterBar';
 import { TextOverlay } from './textOverlay';
 import { onThemeChange } from './themeManager';
+import { FileListPane } from './fileListPane';
+import { SplitDivider } from './splitDivider';
 
 // ─── VS Code API ────────────────────────────────────────────────────────────
 
@@ -45,6 +47,8 @@ class GraphApp {
     private interactionHandler: InteractionHandler;
     private filterBar: FilterBar;
     private textOverlay: TextOverlay;
+    private fileListPane: FileListPane;
+    private splitDivider: SplitDivider;
 
     // Config
     private config: GraphConfig;
@@ -52,6 +56,7 @@ class GraphApp {
     // DOM elements
     private canvas: HTMLCanvasElement;
     private scrollContainer: HTMLElement;
+    private graphPane: HTMLElement;
 
     // Render scheduling
     private renderScheduled: boolean = false;
@@ -63,10 +68,13 @@ class GraphApp {
         // ── Grab DOM elements ──
         this.canvas = document.getElementById('graph-canvas') as HTMLCanvasElement;
         this.scrollContainer = document.getElementById('scroll-container') as HTMLElement;
+        this.graphPane = document.getElementById('graph-pane') as HTMLElement;
         const spacer = document.getElementById('scroll-spacer') as HTMLElement;
         const columnHeaders = document.getElementById('column-headers') as HTMLElement;
         const filterContainer = document.getElementById('filter-container') as HTMLElement;
         const textOverlayEl = document.getElementById('text-overlay') as HTMLElement;
+        const splitDividerEl = document.getElementById('split-divider') as HTMLElement;
+        const fileListPaneEl = document.getElementById('file-list-pane') as HTMLElement;
 
         // ── Initialize components ──
 
@@ -105,8 +113,11 @@ class GraphApp {
                 onContextMenu: (sha, x, y) => {
                     this.postMessage({ type: 'contextMenu', sha, x, y });
                 },
-                onSelectionChanged: (_selectedShas, _primarySha) => {
-                    // Render update will happen via onRequestRender
+                onSelectionChanged: (selectedShas, _primarySha) => {
+                    // When selection is cleared, notify extension
+                    if (selectedShas.size === 0) {
+                        this.postMessage({ type: 'selectionCleared' });
+                    }
                 },
                 onRequestRender: () => {
                     this.scheduleRender();
@@ -115,6 +126,17 @@ class GraphApp {
         );
 
         this.filterBar = new FilterBar(filterContainer);
+
+        // ── File list pane ──
+        this.fileListPane = new FileListPane(fileListPaneEl, (path, leftSha, rightSha) => {
+            this.postMessage({ type: 'fileClick', path, leftSha, rightSha });
+        });
+
+        // ── Split divider ──
+        this.splitDivider = new SplitDivider(splitDividerEl, this.graphPane, fileListPaneEl, (topHeight) => {
+            this.handleResize();
+            this.saveState();
+        });
 
         // ── Wire up events ──
         this.setupScrollEvents();
@@ -168,6 +190,20 @@ class GraphApp {
 
                 case 'stateRestore':
                     this.applyState(msg.state);
+                    break;
+
+                case 'fileListData':
+                    this.fileListPane.setFiles(
+                        msg.files,
+                        msg.leftRef,
+                        msg.rightRef,
+                        msg.leftSha,
+                        msg.rightSha,
+                    );
+                    break;
+
+                case 'fileListClear':
+                    this.fileListPane.clear();
                     break;
             }
         });
@@ -333,11 +369,13 @@ class GraphApp {
 
     private saveState(): void {
         const filter = this.filterBar.getFilter();
+        const graphPaneHeight = this.graphPane.getBoundingClientRect().height;
         const state: GraphState = {
             scrollTop: this.virtualScroll.getScrollTop(),
             selectedSha: this.interactionHandler.getPrimarySha(),
             filterField: filter.field,
             filterPattern: filter.pattern,
+            splitPosition: graphPaneHeight > 0 ? graphPaneHeight : undefined,
         };
         this.vscode.setState(state);
         this.postMessage({ type: 'saveState', state });
@@ -356,6 +394,10 @@ class GraphApp {
         }
         if (state.selectedSha) {
             this.interactionHandler.selectSha(state.selectedSha);
+        }
+        if (state.splitPosition && state.splitPosition > 0) {
+            this.graphPane.style.height = `${state.splitPosition}px`;
+            this.graphPane.style.flex = 'none';
         }
         // Filter state is applied after data arrives; store for later
     }

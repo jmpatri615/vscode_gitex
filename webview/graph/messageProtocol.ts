@@ -67,6 +67,16 @@ export interface GraphState {
     selectedSha: string | null;
     filterField: string | null;
     filterPattern: string | null;
+    splitPosition?: number;
+}
+
+/** A changed file entry for the file list pane. */
+export interface FileListEntry {
+    path: string;
+    oldPath?: string;
+    status: string;
+    insertions: number;
+    deletions: number;
 }
 
 // ─── Extension → Webview Messages ───────────────────────────────────────────
@@ -102,13 +112,28 @@ export interface StateRestoreMessage {
     state: GraphState;
 }
 
+export interface FileListDataMessage {
+    type: 'fileListData';
+    files: FileListEntry[];
+    leftRef: string;
+    rightRef: string;
+    leftSha: string;
+    rightSha: string;
+}
+
+export interface FileListClearMessage {
+    type: 'fileListClear';
+}
+
 export type ExtToWebviewMessage =
     | LayoutDataMessage
     | UpdateTotalCountMessage
     | ThemeChangedMessage
     | SetSelectionMessage
     | FilterResultMessage
-    | StateRestoreMessage;
+    | StateRestoreMessage
+    | FileListDataMessage
+    | FileListClearMessage;
 
 // ─── Webview → Extension Messages ───────────────────────────────────────────
 
@@ -159,6 +184,17 @@ export interface ReadyMessage {
     type: 'ready';
 }
 
+export interface FileClickMessage {
+    type: 'fileClick';
+    path: string;
+    leftSha: string;
+    rightSha: string;
+}
+
+export interface SelectionClearedMessage {
+    type: 'selectionCleared';
+}
+
 export type WebviewToExtMessage =
     | RequestPageMessage
     | CommitClickMessage
@@ -167,4 +203,6 @@ export type WebviewToExtMessage =
     | FilterChangeMessage
     | DateFilterChangeMessage
     | SaveStateMessage
-    | ReadyMessage;
+    | ReadyMessage
+    | FileClickMessage
+    | SelectionClearedMessage;
