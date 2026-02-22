@@ -8,3 +8,7 @@ core/target/
 core/pkg/
 *.wasm
 .DS_Store
+
+# tsc build artifacts in source directories
+src/**/*.js
+src/**/*.js.map
