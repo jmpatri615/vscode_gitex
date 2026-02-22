@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { GitCommands } from '../git/gitCommands';
-import { createGitUri, createWorkingTreeUri } from '../git/gitUri';
+import { createGitUri, createWorkingTreeUri, createStagedUri } from '../git/gitUri';
 import { logError } from '../common/outputChannel';
 
 export class DiffService {
@@ -54,6 +54,16 @@ export class DiffService {
         const rightUri = createWorkingTreeUri(repoRoot, filePath);
         const title = `${filePath} (${sha.substring(0, 7)} vs Working Tree)`;
 
+        await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
+    }
+
+    /**
+     * Open a diff between HEAD and staged content for a file.
+     */
+    async diffStagedFile(filePath: string): Promise<void> {
+        const leftUri = createGitUri('HEAD', filePath);
+        const rightUri = createStagedUri(filePath);
+        const title = `${filePath} (HEAD vs Staged)`;
         await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
     }
 

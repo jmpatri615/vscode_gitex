@@ -91,6 +91,15 @@ export class CanvasRenderer {
         // Clear canvas
         ctx.clearRect(0, 0, this.canvas.width / this.dpr, this.canvas.height / this.dpr);
 
+        // Draw alternating row backgrounds
+        for (let row = firstVisibleRow; row <= lastVisibleRow; row++) {
+            if (row % 2 === 1) {
+                const y = row * config.rowHeight - scrollTop;
+                ctx.fillStyle = 'rgba(128,128,128,0.04)';
+                ctx.fillRect(0, y, this.canvas.width / this.dpr, config.rowHeight);
+            }
+        }
+
         // Draw selection background for selected rows
         for (const node of nodes) {
             if (node.row < firstVisibleRow || node.row > lastVisibleRow) {
@@ -105,12 +114,18 @@ export class CanvasRenderer {
             }
         }
 
+        // Clip graph elements (edges, nodes) to the graph column area
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, config.graphWidth, this.canvas.height / this.dpr);
+        ctx.clip();
+
         // Draw edges (behind nodes)
         for (const edge of edges) {
-            if (edge.to_row < firstVisibleRow && edge.from_row < firstVisibleRow) {
+            if (edge.toRow < firstVisibleRow && edge.fromRow < firstVisibleRow) {
                 continue;
             }
-            if (edge.to_row > lastVisibleRow && edge.from_row > lastVisibleRow) {
+            if (edge.toRow > lastVisibleRow && edge.fromRow > lastVisibleRow) {
                 continue;
             }
             this.drawEdge(ctx, edge, scrollTop, config, colors);
@@ -124,15 +139,9 @@ export class CanvasRenderer {
             this.drawNode(ctx, node, scrollTop, config, colors);
         }
 
-        // Draw labels (on top of everything)
-        for (const node of nodes) {
-            if (node.row < firstVisibleRow || node.row > lastVisibleRow) {
-                continue;
-            }
-            if (node.refs.length > 0) {
-                this.drawLabels(ctx, node, scrollTop, config, colors);
-            }
-        }
+        ctx.restore();
+
+        // Labels are now rendered as DOM badges in the text overlay description column
     }
 
     // ── Edge Drawing ────────────────────────────────────────────────────
@@ -144,18 +153,18 @@ export class CanvasRenderer {
         config: GraphConfig,
         colors: ThemeColors,
     ): void {
-        const color = getBranchColor(edge.color_index);
-        const fromX = this.laneToX(edge.from_lane, config);
-        const fromY = edge.from_row * config.rowHeight + config.rowHeight / 2 - scrollTop;
-        const toX = this.laneToX(edge.to_lane, config);
-        const toY = edge.to_row * config.rowHeight + config.rowHeight / 2 - scrollTop;
+        const color = getBranchColor(edge.colorIndex);
+        const fromX = this.laneToX(edge.fromLane, config);
+        const fromY = edge.fromRow * config.rowHeight + config.rowHeight / 2 - scrollTop;
+        const toX = this.laneToX(edge.toLane, config);
+        const toY = edge.toRow * config.rowHeight + config.rowHeight / 2 - scrollTop;
 
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
-        ctx.globalAlpha = edge.edge_type === 'Merge' ? 0.7 : 1.0;
+        ctx.globalAlpha = edge.edgeType === 'Merge' ? 0.7 : 1.0;
 
-        if (edge.from_lane === edge.to_lane) {
+        if (edge.fromLane === edge.toLane) {
             // Straight vertical line for same-lane edges
             ctx.moveTo(fromX, fromY);
             ctx.lineTo(toX, toY);
@@ -186,9 +195,9 @@ export class CanvasRenderer {
         const x = this.laneToX(node.lane, config);
         const y = node.row * config.rowHeight + config.rowHeight / 2 - scrollTop;
         const r = config.nodeRadius;
-        const color = getBranchColor(node.color_index);
+        const color = getBranchColor(node.colorIndex);
 
-        switch (node.node_type) {
+        switch (node.nodeType) {
             case 'Head':
                 // Double ring for HEAD
                 ctx.beginPath();
@@ -215,6 +224,22 @@ export class CanvasRenderer {
                 ctx.strokeStyle = colors.foreground;
                 ctx.lineWidth = 0.5;
                 ctx.stroke();
+                break;
+
+            case 'CommitIndex':
+                // Dotted circle with small filled center dot
+                ctx.beginPath();
+                ctx.setLineDash([1.5, 2.5]);
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // Filled center dot
+                ctx.beginPath();
+                ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
                 break;
 
             case 'WorkingTree':
@@ -277,11 +302,11 @@ export class CanvasRenderer {
         let label = ref.name;
         let fontStyle = '';
 
-        switch (ref.ref_type) {
+        switch (ref.refType) {
             case 'Branch':
                 bgColor = isDarkTheme() ? '#3a6ea5' : '#0066b8';
                 textColor = '#ffffff';
-                fontStyle = ref.is_head ? 'bold ' : '';
+                fontStyle = ref.isHead ? 'bold ' : '';
                 break;
             case 'RemoteBranch':
                 bgColor = isDarkTheme() ? '#4a4a6a' : '#8888bb';
@@ -313,7 +338,7 @@ export class CanvasRenderer {
         const totalWidth = textWidth + paddingH * 2;
         const top = y - height / 2;
 
-        if (ref.ref_type === 'Tag') {
+        if (ref.refType === 'Tag') {
             // Tag: pointed-left shape
             const pointInset = 5;
             ctx.beginPath();

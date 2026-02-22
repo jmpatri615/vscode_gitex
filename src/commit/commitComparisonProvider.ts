@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { GitCommands } from '../git/gitCommands';
-import { ChangedFile, ComparisonIncomingMessage } from '../common/types';
+import { ChangedFile, ComparisonIncomingMessage, WORKING_DIR_SHA, COMMIT_INDEX_SHA, isVirtualSha } from '../common/types';
+import { createGitUri, createWorkingTreeUri, createStagedUri } from '../git/gitUri';
 import { logError } from '../common/outputChannel';
 
 export class CommitComparisonProvider {
@@ -13,17 +14,36 @@ export class CommitComparisonProvider {
 
     async compare(sha1: string, sha2: string): Promise<void> {
         try {
-            const files = await this.gitCommands.getDiffBetweenCommits(sha1, sha2);
+            let files: ChangedFile[];
+            if (sha1 === WORKING_DIR_SHA || sha2 === WORKING_DIR_SHA) {
+                const otherSha = sha1 === WORKING_DIR_SHA ? sha2 : sha1;
+                if (otherSha === COMMIT_INDEX_SHA) {
+                    files = await this.gitCommands.getDiffBetweenIndexAndWorkingTree();
+                } else {
+                    files = await this.gitCommands.getDiffWithWorkingTree(otherSha);
+                }
+            } else if (sha1 === COMMIT_INDEX_SHA || sha2 === COMMIT_INDEX_SHA) {
+                const otherSha = sha1 === COMMIT_INDEX_SHA ? sha2 : sha1;
+                files = await this.gitCommands.getDiffBetweenIndexAndCommit(otherSha);
+            } else {
+                files = await this.gitCommands.getDiffBetweenCommits(sha1, sha2);
+            }
             this.showComparisonPanel(sha1, sha2, files);
         } catch (error) {
-            logError(`Failed to compare ${sha1} and ${sha2}`, error);
+            logError(`Failed to compare ${this.formatRef(sha1)} and ${this.formatRef(sha2)}`, error);
             vscode.window.showErrorMessage('GitEx: Failed to compare commits');
         }
     }
 
+    private formatRef(sha: string): string {
+        if (sha === WORKING_DIR_SHA) { return 'Working Dir'; }
+        if (sha === COMMIT_INDEX_SHA) { return 'Index'; }
+        return sha.substring(0, 7);
+    }
+
     private showComparisonPanel(sha1: string, sha2: string, files: ChangedFile[]): void {
-        const short1 = sha1.substring(0, 7);
-        const short2 = sha2.substring(0, 7);
+        const short1 = this.formatRef(sha1);
+        const short2 = this.formatRef(sha2);
 
         if (this.panel) {
             this.panel.reveal(vscode.ViewColumn.Beside);
@@ -51,11 +71,21 @@ export class CommitComparisonProvider {
     }
 
     private async openDiffForFile(sha1: string, sha2: string, filePath: string): Promise<void> {
-        const { createGitUri } = await import('../git/gitUri');
-        const leftUri = createGitUri(sha1, filePath);
-        const rightUri = createGitUri(sha2, filePath);
-        const title = `${filePath} (${sha1.substring(0, 7)} ↔ ${sha2.substring(0, 7)})`;
+        const leftUri = this.resolveUri(sha1, filePath);
+        const rightUri = this.resolveUri(sha2, filePath);
+        const title = `${filePath} (${this.formatRef(sha1)} ↔ ${this.formatRef(sha2)})`;
         await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
+    }
+
+    private resolveUri(sha: string, filePath: string): vscode.Uri {
+        if (sha === WORKING_DIR_SHA) {
+            const repoRoot = this.gitCommands['git'].getRepoRoot();
+            return createWorkingTreeUri(repoRoot, filePath);
+        }
+        if (sha === COMMIT_INDEX_SHA) {
+            return createStagedUri(filePath);
+        }
+        return createGitUri(sha, filePath);
     }
 
     private getHtml(webview: vscode.Webview, sha1: string, sha2: string, files: ChangedFile[]): string {

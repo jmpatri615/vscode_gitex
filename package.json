@@ -20,10 +20,11 @@
     "gitextensions"
   ],
   "activationEvents": [
-    "workspaceContains:.git"
+    "workspaceContains:.git",
+    "onView:gitex.graphView"
   ],
   "main": "./dist/extension.js",
-  "sideEffects": false,
+  "sideEffects": ["*.css"],
   "contributes": {
     "viewsContainers": {
       "activitybar": [

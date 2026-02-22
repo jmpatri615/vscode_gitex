@@ -87,6 +87,15 @@ export class ColumnLayout {
         return col.flexible ? this.getFlexWidth() : col.width;
     }
 
+    setColumnWidth(id: string, width: number): void {
+        const col = this.columns.find(c => c.id === id);
+        if (col && !col.flexible) {
+            col.width = Math.max(col.minWidth, width);
+            this.updateHeaderWidths();
+            this.emitResize();
+        }
+    }
+
     // ── Events ──────────────────────────────────────────────────────────
 
     onResize(callback: ColumnResizeCallback): void {

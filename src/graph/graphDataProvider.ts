@@ -1,8 +1,11 @@
 import { GitCommands } from '../git/gitCommands';
 import { configuration } from '../common/configuration';
 import { computeGraphLayout, appendToLayout, freeLayout } from '../wasm/wasmBridge';
-import { LayoutResult, LayoutNode, Edge, GraphViewOptions, FilterOptions } from '../common/types';
-import { log, logTiming } from '../common/outputChannel';
+import {
+    LayoutResult, LayoutNode, Edge, GraphViewOptions, FilterOptions,
+    WORKING_DIR_SHA, COMMIT_INDEX_SHA,
+} from '../common/types';
+import { log, logError, logTiming } from '../common/outputChannel';
 
 export class GraphDataProvider {
     private currentLayout: LayoutResult | null = null;
@@ -31,8 +34,16 @@ export class GraphDataProvider {
     async loadInitialData(filter?: FilterOptions): Promise<LayoutResult> {
         const startMs = Date.now();
 
-        // Get total count
-        this.totalCount = await this.gitCommands.getTotalCommitCount(this.viewOptions.allBranches);
+        // Get total count (required) and repo status (best-effort) in parallel
+        const statusPromise = this.gitCommands.getRepoStatus().catch(err => {
+            logError('Failed to get repo status for virtual nodes', err);
+            return null;
+        });
+        const [totalCount, status] = await Promise.all([
+            this.gitCommands.getTotalCommitCount(this.viewOptions.allBranches),
+            statusPromise,
+        ]);
+        this.totalCount = totalCount;
         log(`Total commits: ${this.totalCount}`);
 
         // Fetch first page
@@ -49,11 +60,119 @@ export class GraphDataProvider {
         }
 
         this.currentLayout = computeGraphLayout(rawLog);
+
+        // Prepend virtual nodes (Working Directory + Commit Index) if repo has HEAD
+        // This is best-effort: if it fails, we still show the real graph
+        if (status?.head) {
+            try {
+                const virtualResult = await this.buildVirtualNodes(status.head);
+
+                // Only shift rows AFTER virtual nodes are successfully built
+                for (const node of this.currentLayout.nodes) {
+                    node.row += 2;
+                }
+                for (const edge of this.currentLayout.edges) {
+                    edge.fromRow += 2;
+                    edge.toRow += 2;
+                }
+
+                // Fix edge target rows now that real nodes have been shifted
+                const headNode = this.currentLayout.nodes.find(n => n.sha === status!.head);
+                if (headNode) {
+                    // Update the Index→HEAD edge to point to the shifted HEAD row
+                    const indexToHeadEdge = virtualResult.edges.find(e => e.toSha === status!.head);
+                    if (indexToHeadEdge) {
+                        indexToHeadEdge.toRow = headNode.row;
+                        indexToHeadEdge.toLane = headNode.lane;
+                    }
+                }
+
+                this.currentLayout.nodes.unshift(...virtualResult.nodes);
+                this.currentLayout.edges.unshift(...virtualResult.edges);
+                this.totalCount += 2;
+            } catch (err) {
+                logError('Failed to build virtual nodes, showing graph without them', err);
+            }
+        }
+
         this.currentLayout.totalCount = this.totalCount;
         this.loadedPages = 1;
 
         logTiming('Initial graph data load', startMs);
         return this.currentLayout;
+    }
+
+    private async buildVirtualNodes(headSha: string): Promise<{ nodes: LayoutNode[]; edges: Edge[] }> {
+        const [stagedFiles, unstagedFiles, untrackedFiles] = await Promise.all([
+            this.gitCommands.getStagedFiles(),
+            this.gitCommands.getUnstagedFiles(),
+            this.gitCommands.getUntrackedFiles(),
+        ]);
+
+        const stagedCount = stagedFiles.length;
+        const workingCount = unstagedFiles.length + untrackedFiles.length;
+        const now = Math.floor(Date.now() / 1000);
+
+        // Find HEAD node lane (before row shift — rows haven't been shifted yet)
+        let headLane = 0;
+        if (this.currentLayout) {
+            const headNode = this.currentLayout.nodes.find(n => n.sha === headSha);
+            if (headNode) { headLane = headNode.lane; }
+        }
+
+        const indexNode: LayoutNode = {
+            sha: COMMIT_INDEX_SHA,
+            shortSha: '',
+            lane: headLane,
+            row: 0,
+            colorIndex: 0,
+            subject: stagedCount > 0 ? `${stagedCount} staged change${stagedCount !== 1 ? 's' : ''}` : 'No staged changes',
+            authorName: 'You',
+            authorDate: now,
+            refs: [],
+            parents: [headSha],
+            nodeType: 'CommitIndex',
+        };
+
+        const workingNode: LayoutNode = {
+            sha: WORKING_DIR_SHA,
+            shortSha: '',
+            lane: headLane,
+            row: 1,
+            colorIndex: 0,
+            subject: workingCount > 0 ? `${workingCount} working directory change${workingCount !== 1 ? 's' : ''}` : 'No working directory changes',
+            authorName: 'You',
+            authorDate: now,
+            refs: [],
+            parents: [COMMIT_INDEX_SHA],
+            nodeType: 'WorkingTree',
+        };
+
+        // Edge target row for Index→HEAD will be fixed by caller after row shift
+        const edges: Edge[] = [
+            {
+                fromSha: WORKING_DIR_SHA,
+                toSha: COMMIT_INDEX_SHA,
+                fromLane: headLane,
+                toLane: headLane,
+                fromRow: 1,
+                toRow: 0,
+                edgeType: 'Normal',
+                colorIndex: 0,
+            },
+            {
+                fromSha: COMMIT_INDEX_SHA,
+                toSha: headSha,
+                fromLane: headLane,
+                toLane: headLane,
+                fromRow: 0,
+                toRow: 2, // placeholder — caller fixes after row shift
+                edgeType: 'Normal',
+                colorIndex: 0,
+            },
+        ];
+
+        return { nodes: [indexNode, workingNode], edges };
     }
 
     async loadNextPage(filter?: FilterOptions): Promise<LayoutResult | null> {

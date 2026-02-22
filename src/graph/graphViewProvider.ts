@@ -13,6 +13,8 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         private dataProvider: GraphDataProvider,
         private onCommitSelected: (sha: string) => void,
         private onCommitContextMenu: (sha: string) => void,
+        private onCompareSelected?: (sha1: string, sha2: string) => void,
+        private onSelectionChanged?: (shas: string[]) => void,
     ) {
         this.extensionUri = extensionUri;
     }
@@ -97,9 +99,18 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
                 break;
             }
 
-            case 'commitClick':
-                this.onCommitSelected(message.sha);
+            case 'commitClick': {
+                const selectedShas = message.selectedShas || [message.sha];
+                if (this.onSelectionChanged) {
+                    this.onSelectionChanged(selectedShas);
+                }
+                if (selectedShas.length === 2 && this.onCompareSelected) {
+                    this.onCompareSelected(selectedShas[0], selectedShas[1]);
+                } else if (selectedShas.length === 1) {
+                    this.onCommitSelected(message.sha);
+                }
                 break;
+            }
 
             case 'commitDblClick':
                 this.onCommitSelected(message.sha);
@@ -170,47 +181,24 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
     <title>GitEx Graph</title>
 </head>
 <body>
-    <div id="toolbar" role="toolbar" aria-label="Graph controls">
-        <div class="toolbar-group">
-            <select id="branch-filter" title="Branch filter">
-                <option value="all">All Branches</option>
-                <option value="current">Current Branch</option>
-            </select>
-            <button id="btn-toggle-remotes" class="toolbar-btn toggle-on" title="Show remote branches">Remotes</button>
-            <button id="btn-toggle-tags" class="toolbar-btn toggle-on" title="Show tags">Tags</button>
-            <button id="btn-toggle-stashes" class="toolbar-btn toggle-on" title="Show stashes">Stashes</button>
-        </div>
-        <div class="toolbar-group">
-            <button id="btn-search" class="toolbar-btn" title="Find (Ctrl+F)">Search</button>
-            <button id="btn-refresh" class="toolbar-btn" title="Refresh">Refresh</button>
-        </div>
-    </div>
-    <div id="filter-bar" class="hidden" role="search" aria-label="Commit filter">
-        <input type="text" id="filter-input" placeholder="Search commits..." aria-label="Search commits" />
-        <select id="filter-field" aria-label="Filter field">
-            <option value="message">Message</option>
-            <option value="author">Author</option>
-            <option value="committer">Committer</option>
-            <option value="sha">SHA</option>
+    <div id="toolbar" class="toolbar" role="toolbar" aria-label="Graph controls">
+        <select id="branch-filter" title="Branch filter">
+            <option value="all">All Branches</option>
+            <option value="current">Current Branch</option>
         </select>
-        <input type="date" id="filter-date-from" title="From date" aria-label="From date" />
-        <input type="date" id="filter-date-to" title="To date" aria-label="To date" />
-        <button id="btn-filter-close" title="Close">×</button>
+        <button id="btn-toggle-remotes" class="toolbar-btn active" title="Show remote branches">Remotes</button>
+        <button id="btn-toggle-tags" class="toolbar-btn active" title="Show tags">Tags</button>
+        <button id="btn-toggle-stashes" class="toolbar-btn active" title="Show stashes">Stashes</button>
+        <div class="toolbar-spacer"></div>
+        <button id="btn-search" class="toolbar-btn" title="Find (Ctrl+F)">Search</button>
+        <button id="btn-refresh" class="toolbar-btn" title="Refresh">Refresh</button>
     </div>
-    <div id="column-headers" role="row" aria-label="Column headers">
-        <div class="column-header" data-col="graph" style="width:200px">Graph</div>
-        <div class="column-header" data-col="description" style="flex:1">Description</div>
-        <div class="column-header" data-col="author" style="width:120px">Author</div>
-        <div class="column-header" data-col="date" style="width:100px">Date</div>
-        <div class="column-header" data-col="sha" style="width:70px">SHA</div>
-    </div>
-    <div id="scroll-container" role="grid" aria-label="Commit graph" tabindex="0">
-        <div id="scroll-spacer"></div>
-        <canvas id="graph-canvas" role="img" aria-label="Git commit graph visualization"></canvas>
+    <div id="filter-container" role="search" aria-label="Commit filter"></div>
+    <div id="column-headers" role="row" aria-label="Column headers"></div>
+    <div id="scroll-container" class="scroll-container" role="grid" aria-label="Commit graph" tabindex="0">
+        <div id="scroll-spacer" class="scroll-spacer"></div>
+        <canvas id="graph-canvas" class="graph-canvas" role="img" aria-label="Git commit graph visualization"></canvas>
         <div id="text-overlay"></div>
-    </div>
-    <div id="status-bar">
-        <span id="commit-count"></span>
     </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

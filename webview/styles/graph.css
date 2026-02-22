@@ -250,3 +250,12 @@ body {
     font-style: italic;
     opacity: 0.85;
 }
+
+.text-row-alt {
+    background-color: rgba(90, 93, 94, 0.08);
+}
+
+.badge-stash {
+    background-color: #555555;
+    color: #ffffff;
+}

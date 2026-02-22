@@ -20,13 +20,10 @@ function computeGraphLayoutTS(raw: Buffer): LayoutResult {
         const commit = commits[row];
         let lane = -1;
 
-        // Check if any parent already has a lane reserved for this commit
-        for (const parentSha of commit.parents) {
-            const parentLane = shaToLane.get(parentSha);
-            if (parentLane !== undefined && activeLanes[parentLane] === commit.sha) {
-                lane = parentLane;
-                break;
-            }
+        // Check if a child already reserved a lane for this commit
+        const reservedLane = shaToLane.get(commit.sha);
+        if (reservedLane !== undefined) {
+            lane = reservedLane;
         }
 
         // If no reserved lane, find first empty lane
@@ -64,45 +61,42 @@ function computeGraphLayoutTS(raw: Buffer): LayoutResult {
             nodeType,
         });
 
-        shaToLane.set(commit.sha, lane);
-
-        // Connect to parents: first parent continues this lane
+        // Connect to parents: first parent continues this lane, others get new lanes
         for (let pi = 0; pi < commit.parents.length; pi++) {
             const parentSha = commit.parents[pi];
-            const existingParentLane = shaToLane.get(parentSha);
+            let parentLane: number;
 
+            const existingParentLane = shaToLane.get(parentSha);
             if (existingParentLane !== undefined) {
-                // Parent already placed — create edge to it
-                const parentRow = nodes.findIndex(n => n.sha === parentSha);
-                if (parentRow >= 0) {
-                    edges.push({
-                        fromSha: commit.sha,
-                        toSha: parentSha,
-                        fromLane: lane,
-                        toLane: existingParentLane,
-                        fromRow: row,
-                        toRow: parentRow,
-                        edgeType: pi > 0 ? 'Merge' : 'Normal',
-                        colorIndex: pi > 0 ? colorIndex : nodes[parentRow].colorIndex,
-                    });
-                }
+                // Parent already has a reserved lane
+                parentLane = existingParentLane;
+            } else if (pi === 0) {
+                // First parent: continue on same lane
+                parentLane = lane;
+                activeLanes[lane] = parentSha;
+                shaToLane.set(parentSha, lane);
             } else {
-                // Parent not yet seen — reserve a lane for it
-                if (pi === 0) {
-                    // First parent: continue on same lane
-                    activeLanes[lane] = parentSha;
-                    shaToLane.set(parentSha, lane);
-                } else {
-                    // Additional parents: find a new lane
-                    let parentLane = activeLanes.indexOf(null);
-                    if (parentLane === -1) {
-                        parentLane = activeLanes.length;
-                        activeLanes.push(null);
-                    }
-                    activeLanes[parentLane] = parentSha;
-                    shaToLane.set(parentSha, parentLane);
+                // Additional parents: find a new lane
+                parentLane = activeLanes.indexOf(null);
+                if (parentLane === -1) {
+                    parentLane = activeLanes.length;
+                    activeLanes.push(null);
                 }
+                activeLanes[parentLane] = parentSha;
+                shaToLane.set(parentSha, parentLane);
             }
+
+            // Create edge with placeholder toRow (-1); resolved in second pass
+            edges.push({
+                fromSha: commit.sha,
+                toSha: parentSha,
+                fromLane: lane,
+                toLane: parentLane,
+                fromRow: row,
+                toRow: -1,
+                edgeType: pi > 0 ? 'Merge' : 'Normal',
+                colorIndex,
+            });
         }
 
         // Free lanes for commits with no parents continuing
@@ -111,7 +105,25 @@ function computeGraphLayoutTS(raw: Buffer): LayoutResult {
         }
     }
 
-    return { nodes, edges, totalCount: commits.length };
+    // Second pass: resolve toRow for all edges
+    const shaToRow = new Map<string, number>();
+    for (let i = 0; i < nodes.length; i++) {
+        shaToRow.set(nodes[i].sha, i);
+    }
+    for (const edge of edges) {
+        const resolvedRow = shaToRow.get(edge.toSha);
+        if (resolvedRow !== undefined) {
+            edge.toRow = resolvedRow;
+            // Update color: for normal edges, use the parent node's color
+            if (edge.edgeType === 'Normal') {
+                edge.colorIndex = nodes[resolvedRow].colorIndex;
+            }
+        }
+    }
+    // Remove edges whose parent was not found (e.g., truncated history)
+    const resolvedEdges = edges.filter(e => e.toRow >= 0);
+
+    return { nodes, edges: resolvedEdges, totalCount: commits.length };
 }
 
 function hashString(str: string): number {

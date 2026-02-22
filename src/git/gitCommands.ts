@@ -211,6 +211,64 @@ export class GitCommands {
         return files;
     }
 
+    // --- Staged / Unstaged / Untracked ---
+
+    async getStagedFiles(): Promise<ChangedFile[]> {
+        const result = await this.git.exec(['diff', '--cached', '--name-status', '-z']);
+        if (result.exitCode !== 0) { return []; }
+        return this.parseNameStatus(result.stdout);
+    }
+
+    async getUnstagedFiles(): Promise<ChangedFile[]> {
+        const result = await this.git.exec(['diff', '--name-status', '-z']);
+        if (result.exitCode !== 0) { return []; }
+        return this.parseNameStatus(result.stdout);
+    }
+
+    async getUntrackedFiles(): Promise<string[]> {
+        const result = await this.git.exec(['ls-files', '--others', '--exclude-standard']);
+        if (result.exitCode !== 0) { return []; }
+        return result.stdout.trim().split('\n').filter(l => l.length > 0);
+    }
+
+    private parseNameStatus(output: string): ChangedFile[] {
+        const files: ChangedFile[] = [];
+        const parts = output.split('\0');
+        let i = 0;
+        while (i < parts.length) {
+            const statusStr = parts[i];
+            if (!statusStr) { i++; continue; }
+            const code = statusStr.charAt(0) as FileStatus;
+            if ('MADRCT'.includes(code)) {
+                if (code === 'R' || code === 'C') {
+                    const oldPath = parts[i + 1] || '';
+                    const newPath = parts[i + 2] || '';
+                    files.push({ path: newPath, oldPath, status: code, insertions: 0, deletions: 0 });
+                    i += 3;
+                } else {
+                    const filePath = parts[i + 1] || '';
+                    files.push({ path: filePath, status: code, insertions: 0, deletions: 0 });
+                    i += 2;
+                }
+            } else {
+                i++;
+            }
+        }
+        return files;
+    }
+
+    async getDiffBetweenIndexAndCommit(sha: string): Promise<ChangedFile[]> {
+        const result = await this.git.exec(['diff', '--cached', '--numstat', '-z', sha]);
+        if (result.exitCode !== 0) { return []; }
+        return this.parseNumstat(result.stdout);
+    }
+
+    async getDiffBetweenIndexAndWorkingTree(): Promise<ChangedFile[]> {
+        const result = await this.git.exec(['diff', '--numstat', '-z']);
+        if (result.exitCode !== 0) { return []; }
+        return this.parseNumstat(result.stdout);
+    }
+
     // --- Blame ---
 
     async getBlameRaw(filePath: string): Promise<Buffer> {

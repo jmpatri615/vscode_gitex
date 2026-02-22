@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LayoutNode } from '../common/types';
+import { LayoutNode, isVirtualSha } from '../common/types';
 import { GraphDataProvider } from './graphDataProvider';
 
 interface MenuAction {
@@ -49,6 +49,16 @@ export class GraphMenuHandler {
     private buildMenuActions(node: LayoutNode): MenuAction[] {
         const sha = node.sha;
         const actions: MenuAction[] = [];
+
+        // Virtual nodes get a reduced action set
+        if (isVirtualSha(sha)) {
+            actions.push({ label: 'Compare with Working Tree', command: 'gitex.compareWithWorkingTree', args: [sha], group: 'Diff' });
+            if (this.selectedShas.length === 2) {
+                actions.push({ label: 'Compare Selected Commits', command: 'gitex.compareCommits', args: this.selectedShas, group: 'Diff' });
+            }
+            actions.push({ label: 'Copy SHA', command: 'gitex.copySha', args: [sha], group: 'Copy' });
+            return actions;
+        }
 
         // Checkout
         actions.push({ label: 'Checkout Revision', command: 'gitex.checkoutRevision', args: [sha], group: 'Checkout' });

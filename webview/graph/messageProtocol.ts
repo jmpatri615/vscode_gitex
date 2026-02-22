@@ -6,12 +6,19 @@ export type RefType = 'Branch' | 'RemoteBranch' | 'Tag' | 'Head' | 'Stash';
 /** A git reference decorating a commit. Mirrors Rust RefInfo. */
 export interface RefInfo {
     name: string;
-    ref_type: RefType;
-    is_head: boolean;
+    refType: RefType;
+    isHead: boolean;
 }
 
 /** The visual type of a graph node. Mirrors Rust NodeType. */
-export type NodeType = 'Normal' | 'Head' | 'Stash' | 'WorkingTree';
+export type NodeType = 'Normal' | 'Head' | 'Stash' | 'WorkingTree' | 'CommitIndex';
+
+export const WORKING_DIR_SHA = '0000000000000000000000000000000000000001';
+export const COMMIT_INDEX_SHA = '0000000000000000000000000000000000000002';
+
+export function isVirtualSha(sha: string): boolean {
+    return sha === WORKING_DIR_SHA || sha === COMMIT_INDEX_SHA;
+}
 
 /** The visual type of an edge. Mirrors Rust EdgeType. */
 export type EdgeType = 'Normal' | 'Merge';
@@ -21,35 +28,35 @@ export type EdgeType = 'Normal' | 'Merge';
 /** A positioned commit node for rendering. Mirrors Rust LayoutNode. */
 export interface LayoutNode {
     sha: string;
-    short_sha: string;
+    shortSha: string;
     lane: number;
     row: number;
-    color_index: number;
+    colorIndex: number;
     subject: string;
-    author_name: string;
-    author_date: number;
+    authorName: string;
+    authorDate: number;
     refs: RefInfo[];
     parents: string[];
-    node_type: NodeType;
+    nodeType: NodeType;
 }
 
 /** An edge connecting two commits. Mirrors Rust Edge. */
 export interface Edge {
-    from_sha: string;
-    to_sha: string;
-    from_lane: number;
-    to_lane: number;
-    from_row: number;
-    to_row: number;
-    edge_type: EdgeType;
-    color_index: number;
+    fromSha: string;
+    toSha: string;
+    fromLane: number;
+    toLane: number;
+    fromRow: number;
+    toRow: number;
+    edgeType: EdgeType;
+    colorIndex: number;
 }
 
 /** The complete layout result from the engine. Mirrors Rust LayoutResult. */
 export interface LayoutResult {
     nodes: LayoutNode[];
     edges: Edge[];
-    total_count: number;
+    totalCount: number;
 }
 
 // ─── Webview State ──────────────────────────────────────────────────────────
@@ -116,6 +123,7 @@ export interface CommitClickMessage {
     sha: string;
     ctrlKey: boolean;
     shiftKey: boolean;
+    selectedShas: string[];
 }
 
 export interface CommitDblClickMessage {

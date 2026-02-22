@@ -18,6 +18,7 @@ import { DiffService } from './commit/diffService';
 import { loadWasm } from './wasm/wasmLoader';
 import { onConfigurationChanged } from './common/configuration';
 import { log, logError, getOutputChannel, disposeOutputChannel } from './common/outputChannel';
+import { isVirtualSha, WORKING_DIR_SHA, COMMIT_INDEX_SHA } from './common/types';
 
 let gitWatcher: GitWatcher | undefined;
 
@@ -48,10 +49,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     log(`Git repository found at ${gitService.getRepoRoot()}`);
     vscode.commands.executeCommand('setContext', 'gitex:hasRepository', true);
 
-    // Load WASM (non-blocking — falls back to TS if unavailable)
-    loadWasm(context.extensionPath).catch(err => {
-        logError('WASM load error', err);
-    });
+    // Load WASM before initializing providers so it's available on first use
+    try {
+        await loadWasm(context.extensionPath);
+    } catch (err) {
+        logError('WASM load error (will use TS fallback)', err);
+    }
 
     // Initialize services
     const gitCommands = new GitCommands(gitService);
@@ -59,7 +62,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const graphDataProvider = new GraphDataProvider(gitCommands);
     const blameService = new BlameService(gitCommands);
     const diffService = new DiffService(gitCommands);
-    const commitDetailsProvider = new CommitDetailsProvider(context.extensionUri, gitCommands);
+    const commitDetailsProvider = new CommitDetailsProvider(context.extensionUri, gitCommands, diffService);
     const commitComparisonProvider = new CommitComparisonProvider(context.extensionUri, gitCommands);
     const graphMenuHandler = new GraphMenuHandler(graphDataProvider);
 
@@ -73,10 +76,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         context.extensionUri,
         graphDataProvider,
         async (sha: string) => {
-            await commitDetailsProvider.show(sha);
+            if (isVirtualSha(sha)) {
+                await handleVirtualNodeClick(sha, gitCommands, diffService);
+            } else {
+                await commitDetailsProvider.show(sha);
+            }
         },
         (sha: string) => {
             graphMenuHandler.showContextMenu(sha);
+        },
+        async (sha1: string, sha2: string) => {
+            await compareAnyTwoRefs(sha1, sha2, gitCommands, commitComparisonProvider, diffService);
+        },
+        (shas: string[]) => {
+            graphMenuHandler.setSelection(shas);
         },
     );
 
@@ -157,6 +170,92 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     log('GitEx activated successfully');
+}
+
+async function compareAnyTwoRefs(
+    sha1: string,
+    sha2: string,
+    gitCommands: GitCommands,
+    commitComparisonProvider: CommitComparisonProvider,
+    diffService: DiffService,
+): Promise<void> {
+    try {
+        // Resolve virtual SHAs for display and diff
+        if (sha1 === WORKING_DIR_SHA || sha2 === WORKING_DIR_SHA) {
+            // One side is working directory
+            const otherSha = sha1 === WORKING_DIR_SHA ? sha2 : sha1;
+            if (otherSha === COMMIT_INDEX_SHA) {
+                // Working dir vs Index: show unstaged changes
+                const headSha = await gitCommands.revParse('HEAD');
+                if (headSha) { await diffService.compareWithWorkingTree(headSha); }
+            } else {
+                await diffService.compareWithWorkingTree(otherSha);
+            }
+        } else if (sha1 === COMMIT_INDEX_SHA || sha2 === COMMIT_INDEX_SHA) {
+            // One side is commit index
+            const otherSha = sha1 === COMMIT_INDEX_SHA ? sha2 : sha1;
+            // Index vs commit: show staged diff against that commit
+            const files = await gitCommands.getDiffBetweenIndexAndCommit(otherSha);
+            if (files.length === 0) {
+                vscode.window.showInformationMessage('No differences between index and commit');
+                return;
+            }
+            // Use comparison provider to show the list
+            await commitComparisonProvider.compare(otherSha, COMMIT_INDEX_SHA);
+        } else {
+            // Both regular commits
+            await commitComparisonProvider.compare(sha1, sha2);
+        }
+    } catch (error) {
+        logError('Failed to compare refs', error);
+    }
+}
+
+async function handleVirtualNodeClick(
+    sha: string,
+    gitCommands: GitCommands,
+    diffService: DiffService,
+): Promise<void> {
+    if (sha === WORKING_DIR_SHA) {
+        // Show unstaged/untracked changes
+        const headSha = await gitCommands.revParse('HEAD');
+        if (headSha) {
+            await diffService.compareWithWorkingTree(headSha);
+        }
+    } else if (sha === COMMIT_INDEX_SHA) {
+        // Show staged changes
+        await showStagedChanges(gitCommands, diffService);
+    }
+}
+
+async function showStagedChanges(
+    gitCommands: GitCommands,
+    diffService: DiffService,
+): Promise<void> {
+    const files = await gitCommands.getStagedFiles();
+    if (files.length === 0) {
+        vscode.window.showInformationMessage('No staged changes');
+        return;
+    }
+
+    if (files.length === 1) {
+        await diffService.diffStagedFile(files[0].path);
+        return;
+    }
+
+    const items = files.map(f => ({
+        label: `$(diff) [${f.status}] ${f.path}`,
+        description: '',
+        path: f.path,
+    }));
+
+    const selected = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Staged files',
+    });
+
+    if (selected) {
+        await diffService.diffStagedFile(selected.path);
+    }
 }
 
 export function deactivate(): void {

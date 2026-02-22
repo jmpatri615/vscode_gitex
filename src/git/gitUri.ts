@@ -20,6 +20,10 @@ export class GitExContentProvider implements vscode.TextDocumentContentProvider 
         const filePath = uri.path.startsWith('/') ? uri.path.substring(1) : uri.path;
 
         try {
+            if (sha === ':0') {
+                // Staged content: git show :0:<path>
+                return await this.gitCommands.getFileAtCommit(':0', filePath);
+            }
             return await this.gitCommands.getFileAtCommit(sha, filePath);
         } catch (error) {
             return `// Error: Could not retrieve ${filePath} at ${sha}\n// ${error}`;
@@ -43,4 +47,12 @@ export function createGitUri(sha: string, filePath: string): vscode.Uri {
  */
 export function createWorkingTreeUri(repoRoot: string, filePath: string): vscode.Uri {
     return vscode.Uri.file(`${repoRoot}/${filePath}`);
+}
+
+/**
+ * Create a gitex: URI for viewing a file's staged (index) content.
+ * Uses `:0` as the ref to indicate the index entry.
+ */
+export function createStagedUri(filePath: string): vscode.Uri {
+    return vscode.Uri.parse(`${GITEX_SCHEME}://staged/${filePath}?ref=:0`);
 }

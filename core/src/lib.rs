@@ -293,7 +293,7 @@ mod tests {
         assert!(parsed.get("handle").is_some());
         assert!(parsed.get("nodes").is_some());
         assert!(parsed.get("edges").is_some());
-        assert_eq!(parsed["total_count"], 2);
+        assert_eq!(parsed["totalCount"], 2);
 
         let handle = parsed["handle"].as_u64().unwrap() as u32;
 
@@ -325,7 +325,7 @@ mod tests {
 
         let filtered_json = filter_commits(handle, "author", "Alice");
         let filtered: serde_json::Value = serde_json::from_str(&filtered_json).unwrap();
-        assert_eq!(filtered["total_count"], 1);
+        assert_eq!(filtered["totalCount"], 1);
 
         free_layout(handle);
     }
@@ -339,7 +339,7 @@ mod tests {
 
         let filtered_json = filter_by_date(handle, 1650000000, 0);
         let filtered: serde_json::Value = serde_json::from_str(&filtered_json).unwrap();
-        assert_eq!(filtered["total_count"], 1);
+        assert_eq!(filtered["totalCount"], 1);
         assert_eq!(filtered["nodes"][0]["subject"], "Recent");
 
         free_layout(handle);

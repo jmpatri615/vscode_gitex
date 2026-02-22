@@ -12,6 +12,7 @@ pub enum RefType {
 
 /// A single git reference (branch, tag, HEAD, etc.) decorating a commit.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RefInfo {
     pub name: String,
     pub ref_type: RefType,
@@ -48,6 +49,7 @@ pub enum NodeType {
 
 /// A node in the rendered graph layout, ready for the UI.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LayoutNode {
     pub sha: String,
     pub short_sha: String,
@@ -71,6 +73,7 @@ pub enum EdgeType {
 
 /// An edge connecting two commits in the graph layout.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Edge {
     pub from_sha: String,
     pub to_sha: String,
@@ -84,6 +87,7 @@ pub struct Edge {
 
 /// The complete result of computing graph layout, returned as JSON to JS.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LayoutResult {
     pub nodes: Vec<LayoutNode>,
     pub edges: Vec<Edge>,

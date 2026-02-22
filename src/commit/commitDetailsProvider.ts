@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { GitCommands } from '../git/gitCommands';
+import { DiffService } from './diffService';
 import { CommitDetails, CommitDetailIncomingMessage } from '../common/types';
 import { logError } from '../common/outputChannel';
 
@@ -9,6 +10,7 @@ export class CommitDetailsProvider {
     constructor(
         private extensionUri: vscode.Uri,
         private gitCommands: GitCommands,
+        private diffService: DiffService,
     ) {}
 
     async show(sha: string): Promise<void> {
@@ -52,13 +54,13 @@ export class CommitDetailsProvider {
     private async handleMessage(message: CommitDetailIncomingMessage): Promise<void> {
         switch (message.type) {
             case 'openDiff':
-                await vscode.commands.executeCommand('gitex.showCommitDetails', message.sha);
+                await this.diffService.diffWithParent(message.sha, message.path);
                 break;
             case 'navigateToParent':
                 await this.show(message.sha);
                 break;
             case 'openFile':
-                await vscode.commands.executeCommand('gitex.compareWithWorkingTree', message.sha);
+                await this.diffService.diffWithParent(message.sha, message.path);
                 break;
             case 'copySha':
                 await vscode.env.clipboard.writeText(message.sha);
@@ -80,7 +82,7 @@ export class CommitDetailsProvider {
         const filesHtml = details.changedFiles.map(f => {
             const statusClass = f.status.toLowerCase();
             const stats = `+${f.insertions} -${f.deletions}`;
-            return `<div class="file-entry" data-path="${escapeHtml(f.path)}" data-sha="${details.sha}">
+            return `<div class="file-entry file-item" data-path="${escapeHtml(f.path)}" data-sha="${details.sha}" style="cursor:pointer;">
                 <span class="file-status ${statusClass}">[${f.status}]</span>
                 <span class="file-path">${escapeHtml(f.path)}</span>
                 <span class="file-stats">${stats}</span>
@@ -142,7 +144,7 @@ export class CommitDetailsProvider {
         document.querySelectorAll('.file-entry').forEach(el => {
             el.addEventListener('click', () => {
                 vscode.postMessage({
-                    type: 'openFile',
+                    type: 'openDiff',
                     path: el.dataset.path,
                     sha: el.dataset.sha,
                 });

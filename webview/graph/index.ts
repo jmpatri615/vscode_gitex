@@ -1,3 +1,6 @@
+import '../styles/common.css';
+import '../styles/graph.css';
+
 import {
     ExtToWebviewMessage,
     WebviewToExtMessage,
@@ -10,6 +13,7 @@ import { VirtualScroll } from './virtualScroll';
 import { ColumnLayout } from './columnLayout';
 import { InteractionHandler } from './interactionHandler';
 import { FilterBar } from './filterBar';
+import { TextOverlay } from './textOverlay';
 import { onThemeChange } from './themeManager';
 
 // ─── VS Code API ────────────────────────────────────────────────────────────
@@ -40,6 +44,7 @@ class GraphApp {
     private columnLayout: ColumnLayout;
     private interactionHandler: InteractionHandler;
     private filterBar: FilterBar;
+    private textOverlay: TextOverlay;
 
     // Config
     private config: GraphConfig;
@@ -61,6 +66,7 @@ class GraphApp {
         const spacer = document.getElementById('scroll-spacer') as HTMLElement;
         const columnHeaders = document.getElementById('column-headers') as HTMLElement;
         const filterContainer = document.getElementById('filter-container') as HTMLElement;
+        const textOverlayEl = document.getElementById('text-overlay') as HTMLElement;
 
         // ── Initialize components ──
 
@@ -76,13 +82,21 @@ class GraphApp {
         this.columnLayout = new ColumnLayout();
         this.columnLayout.render(columnHeaders);
 
+        this.textOverlay = new TextOverlay(textOverlayEl, this.columnLayout);
+
         this.interactionHandler = new InteractionHandler(
             this.canvas,
             this.canvasRenderer,
             this.config,
             {
                 onCommitClick: (sha, ctrlKey, shiftKey) => {
-                    this.postMessage({ type: 'commitClick', sha, ctrlKey, shiftKey });
+                    this.postMessage({
+                        type: 'commitClick',
+                        sha,
+                        ctrlKey,
+                        shiftKey,
+                        selectedShas: Array.from(this.interactionHandler.getSelectedShas()),
+                    });
                     this.saveState();
                 },
                 onCommitDblClick: (sha) => {
@@ -127,7 +141,7 @@ class GraphApp {
             const msg = event.data;
             switch (msg.type) {
                 case 'layoutData':
-                    this.handleLayoutData(msg.data.nodes, msg.data.edges, msg.data.total_count, msg.append);
+                    this.handleLayoutData(msg.data.nodes, msg.data.edges, msg.data.totalCount, msg.append);
                     break;
 
                 case 'updateTotalCount':
@@ -177,16 +191,34 @@ class GraphApp {
         } else {
             this.nodes = nodes;
             this.edges = edges;
+            this.textOverlay.clear();
         }
 
         this.totalCount = totalCount;
         this.loadedCount = this.nodes.length;
+
+        // Auto-size graph column to fit lanes
+        this.autoSizeGraphColumn();
 
         this.virtualScroll.setTotalCount(totalCount);
         this.virtualScroll.setLoadedRange(0, this.loadedCount);
         this.interactionHandler.setNodes(this.nodes);
 
         this.scheduleRender();
+    }
+
+    private autoSizeGraphColumn(): void {
+        let maxLane = 0;
+        for (const node of this.nodes) {
+            if (node.lane > maxLane) { maxLane = node.lane; }
+        }
+        const autoWidth = Math.max(80, (maxLane + 2) * this.config.laneWidth + 16);
+        if (autoWidth !== this.config.graphWidth) {
+            this.config.graphWidth = autoWidth;
+            this.columnLayout.setColumnWidth('graph', autoWidth);
+            this.interactionHandler.setConfig(this.config);
+            this.handleResize();
+        }
     }
 
     private handleFilterResult(nodes: LayoutNode[], edges: Edge[]): void {
@@ -287,6 +319,13 @@ class GraphApp {
             this.config,
             this.interactionHandler.getSelectedShas(),
             this.interactionHandler.getPrimarySha(),
+        );
+
+        this.textOverlay.render(
+            this.nodes,
+            scrollTop,
+            viewportHeight,
+            this.config,
         );
     }
 

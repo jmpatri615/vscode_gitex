@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 
 const READ_ONLY_COMMANDS = new Set([
     'log', 'show', 'diff-tree', 'diff', 'blame', 'rev-parse',
-    'for-each-ref', 'rev-list', 'status', 'stash',
+    'for-each-ref', 'rev-list', 'status', 'stash', 'ls-files',
 ]);
 
 export interface GitResult {

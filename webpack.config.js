@@ -74,9 +74,6 @@ const graphWebviewConfig = {
       },
     ],
   },
-  optimization: {
-    minimizer: ['...', new CssMinimizerPlugin()],
-  },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'graph.css' }),
   ],
@@ -114,9 +111,6 @@ const commitDetailsWebviewConfig = {
         use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
     ],
-  },
-  optimization: {
-    minimizer: ['...', new CssMinimizerPlugin()],
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'commitDetails.css' }),

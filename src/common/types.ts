@@ -23,7 +23,14 @@ export interface RefInfo {
 
 export type RefType = 'Branch' | 'RemoteBranch' | 'Tag' | 'Head' | 'Stash';
 
-export type NodeType = 'Normal' | 'Head' | 'Stash' | 'WorkingTree';
+export type NodeType = 'Normal' | 'Head' | 'Stash' | 'WorkingTree' | 'CommitIndex';
+
+export const WORKING_DIR_SHA = '0000000000000000000000000000000000000001';
+export const COMMIT_INDEX_SHA = '0000000000000000000000000000000000000002';
+
+export function isVirtualSha(sha: string): boolean {
+    return sha === WORKING_DIR_SHA || sha === COMMIT_INDEX_SHA;
+}
 
 export interface LayoutNode {
     sha: string;
@@ -149,7 +156,7 @@ export interface RepoStatus {
 export type WebviewIncomingMessage =
     | { type: 'ready' }
     | { type: 'requestPage'; skip: number; count: number }
-    | { type: 'commitClick'; sha: string }
+    | { type: 'commitClick'; sha: string; selectedShas?: string[] }
     | { type: 'commitDblClick'; sha: string }
     | { type: 'contextMenu'; sha: string }
     | { type: 'filterChange'; field: FilterOptions['field']; pattern: string }
@@ -163,9 +170,9 @@ export type WebviewOutgoingMessage =
     | { type: 'setSelection'; sha: string };
 
 export type CommitDetailIncomingMessage =
-    | { type: 'openDiff'; sha: string }
+    | { type: 'openDiff'; sha: string; path: string }
     | { type: 'navigateToParent'; sha: string }
-    | { type: 'openFile'; sha: string }
+    | { type: 'openFile'; sha: string; path: string }
     | { type: 'copySha'; sha: string };
 
 export type ComparisonIncomingMessage =
