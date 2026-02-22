@@ -4,6 +4,7 @@ import { GraphViewProvider } from './graphViewProvider';
 import { GraphDataProvider } from './graphDataProvider';
 import { log, logError, showOutputChannel } from '../common/outputChannel';
 import { configuration } from '../common/configuration';
+import { isValidSha, isValidRefName } from '../common/validation';
 
 export class GraphCommandHandler {
     constructor(
@@ -94,6 +95,7 @@ export class GraphCommandHandler {
             validateInput: (value) => {
                 if (!value.trim()) { return 'Branch name is required'; }
                 if (/\s/.test(value)) { return 'Branch name cannot contain spaces'; }
+                if (!isValidRefName(value)) { return 'Invalid branch name'; }
                 return null;
             },
         });
@@ -114,6 +116,10 @@ export class GraphCommandHandler {
             placeHolder: 'v1.0.0',
         });
         if (!name) { return; }
+        if (!isValidRefName(name)) {
+            vscode.window.showErrorMessage('GitEx: Invalid tag name');
+            return;
+        }
 
         const message = await vscode.window.showInputBox({
             prompt: 'Enter tag message (leave empty for lightweight tag)',
@@ -160,6 +166,10 @@ export class GraphCommandHandler {
     }
 
     private async interactiveRebase(sha: string): Promise<void> {
+        if (!isValidSha(sha)) {
+            vscode.window.showErrorMessage('GitEx: Invalid commit SHA');
+            return;
+        }
         const terminal = vscode.window.createTerminal('GitEx: Interactive Rebase');
         terminal.show();
         terminal.sendText(`git rebase -i ${sha}`);

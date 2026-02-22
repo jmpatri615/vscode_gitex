@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { GitCommands } from '../git/gitCommands';
-import { CommitDetails } from '../common/types';
+import { CommitDetails, CommitDetailIncomingMessage } from '../common/types';
 import { logError } from '../common/outputChannel';
 
 export class CommitDetailsProvider {
@@ -32,8 +32,12 @@ export class CommitDetailsProvider {
                     this.panel = undefined;
                 });
 
-                this.panel.webview.onDidReceiveMessage(message => {
-                    this.handleMessage(message);
+                this.panel.webview.onDidReceiveMessage(async (message) => {
+                    try {
+                        await this.handleMessage(message);
+                    } catch (error) {
+                        logError('Error handling commit details message', error);
+                    }
                 });
             }
 
@@ -45,19 +49,19 @@ export class CommitDetailsProvider {
         }
     }
 
-    private handleMessage(message: any): void {
+    private async handleMessage(message: CommitDetailIncomingMessage): Promise<void> {
         switch (message.type) {
             case 'openDiff':
-                vscode.commands.executeCommand('gitex.showCommitDetails', message.sha);
+                await vscode.commands.executeCommand('gitex.showCommitDetails', message.sha);
                 break;
             case 'navigateToParent':
-                this.show(message.sha);
+                await this.show(message.sha);
                 break;
             case 'openFile':
-                vscode.commands.executeCommand('gitex.compareWithWorkingTree', message.sha);
+                await vscode.commands.executeCommand('gitex.compareWithWorkingTree', message.sha);
                 break;
             case 'copySha':
-                vscode.env.clipboard.writeText(message.sha);
+                await vscode.env.clipboard.writeText(message.sha);
                 break;
         }
     }

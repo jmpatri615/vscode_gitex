@@ -7,8 +7,7 @@ suite('Blame Utils Test Suite', () => {
         // 2023-11-14 22:13:20 UTC
         const epoch = 1700000000;
         const result = formatDate(epoch, 'iso');
-        assert.ok(result.includes('2023'));
-        assert.ok(result.includes(':'));
+        assert.strictEqual(result, '2023-11-14 22:13:20');
     });
 
     test('formatDate — relative format', () => {
@@ -16,7 +15,7 @@ suite('Blame Utils Test Suite', () => {
         const now = Math.floor(Date.now() / 1000);
         const fiveMinAgo = now - 300;
         const result = formatDate(fiveMinAgo, 'relative');
-        assert.ok(result.includes('min ago'));
+        assert.strictEqual(result, '5 min ago');
     });
 
     test('formatDate — relative old date', () => {
@@ -24,7 +23,7 @@ suite('Blame Utils Test Suite', () => {
         const now = Math.floor(Date.now() / 1000);
         const twoYearsAgo = now - 365 * 2 * 24 * 60 * 60;
         const result = formatDate(twoYearsAgo, 'relative');
-        assert.ok(result.includes('year'));
+        assert.strictEqual(result, '2 years ago');
     });
 
     test('formatDate — zero epoch returns empty', () => {
@@ -35,7 +34,7 @@ suite('Blame Utils Test Suite', () => {
     test('formatDate — locale format', () => {
         const epoch = 1700000000;
         const result = formatDate(epoch, 'locale');
-        // Should return a locale-formatted date string
-        assert.ok(result.length > 0);
+        // Should return a locale-formatted date string containing the year
+        assert.ok(result.includes('2023') || result.includes('23'), `Expected year in "${result}"`);
     });
 });

@@ -24,6 +24,7 @@ export async function loadWasm(extensionPath: string): Promise<WasmExports | nul
         log(`Loading WASM from ${wasmPkgPath}`);
 
         // wasm-pack --target nodejs generates a CommonJS module
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const wasmPkg = require(wasmPkgPath);
         wasmModule = wasmPkg as WasmExports;
         log('WASM module loaded successfully');

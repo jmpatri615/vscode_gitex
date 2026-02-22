@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { GraphDataProvider } from './graphDataProvider';
-import { configuration } from '../common/configuration';
 import { log, logError } from '../common/outputChannel';
-import { LayoutResult } from '../common/types';
+import { WebviewIncomingMessage, WebviewOutgoingMessage } from '../common/types';
 
 export class GraphViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'gitex.graphView';
@@ -78,7 +76,7 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         this.postMessage({ type: 'themeChanged' });
     }
 
-    private async handleMessage(message: any): Promise<void> {
+    private async handleMessage(message: WebviewIncomingMessage): Promise<void> {
         switch (message.type) {
             case 'ready':
                 await this.refresh();
@@ -149,7 +147,7 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private postMessage(message: any): void {
+    private postMessage(message: WebviewOutgoingMessage): void {
         this.view?.webview.postMessage(message);
     }
 
@@ -172,7 +170,7 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
     <title>GitEx Graph</title>
 </head>
 <body>
-    <div id="toolbar">
+    <div id="toolbar" role="toolbar" aria-label="Graph controls">
         <div class="toolbar-group">
             <select id="branch-filter" title="Branch filter">
                 <option value="all">All Branches</option>
@@ -187,28 +185,28 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
             <button id="btn-refresh" class="toolbar-btn" title="Refresh">Refresh</button>
         </div>
     </div>
-    <div id="filter-bar" class="hidden">
-        <input type="text" id="filter-input" placeholder="Search commits..." />
-        <select id="filter-field">
+    <div id="filter-bar" class="hidden" role="search" aria-label="Commit filter">
+        <input type="text" id="filter-input" placeholder="Search commits..." aria-label="Search commits" />
+        <select id="filter-field" aria-label="Filter field">
             <option value="message">Message</option>
             <option value="author">Author</option>
             <option value="committer">Committer</option>
             <option value="sha">SHA</option>
         </select>
-        <input type="date" id="filter-date-from" title="From date" />
-        <input type="date" id="filter-date-to" title="To date" />
+        <input type="date" id="filter-date-from" title="From date" aria-label="From date" />
+        <input type="date" id="filter-date-to" title="To date" aria-label="To date" />
         <button id="btn-filter-close" title="Close">×</button>
     </div>
-    <div id="column-headers">
+    <div id="column-headers" role="row" aria-label="Column headers">
         <div class="column-header" data-col="graph" style="width:200px">Graph</div>
         <div class="column-header" data-col="description" style="flex:1">Description</div>
         <div class="column-header" data-col="author" style="width:120px">Author</div>
         <div class="column-header" data-col="date" style="width:100px">Date</div>
         <div class="column-header" data-col="sha" style="width:70px">SHA</div>
     </div>
-    <div id="scroll-container">
+    <div id="scroll-container" role="grid" aria-label="Commit graph" tabindex="0">
         <div id="scroll-spacer"></div>
-        <canvas id="graph-canvas"></canvas>
+        <canvas id="graph-canvas" role="img" aria-label="Git commit graph visualization"></canvas>
         <div id="text-overlay"></div>
     </div>
     <div id="status-bar">

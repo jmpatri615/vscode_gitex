@@ -3,6 +3,13 @@ import { spawn, ChildProcess } from 'child_process';
 import { configuration } from '../common/configuration';
 import { logCommand, logError, logTiming } from '../common/outputChannel';
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+const READ_ONLY_COMMANDS = new Set([
+    'log', 'show', 'diff-tree', 'diff', 'blame', 'rev-parse',
+    'for-each-ref', 'rev-list', 'status', 'stash',
+]);
+
 export interface GitResult {
     stdout: string;
     stderr: string;
@@ -20,6 +27,7 @@ export interface GitStreamOptions {
 export class GitService {
     private gitBinary: string = 'git';
     private repoRoot: string = '';
+    private inflightRequests = new Map<string, Promise<GitResult>>();
 
     constructor(private workspaceRoot: string) {}
 
@@ -63,8 +71,28 @@ export class GitService {
     }
 
     async exec(args: string[], cwd?: string): Promise<GitResult> {
-        const startMs = Date.now();
+        const command = args[0];
         const workDir = cwd || this.repoRoot || this.workspaceRoot;
+
+        // Dedup read-only commands
+        if (command && READ_ONLY_COMMANDS.has(command)) {
+            const key = `${workDir}:${args.join('\x00')}`;
+            const inflight = this.inflightRequests.get(key);
+            if (inflight) {
+                return inflight;
+            }
+            const promise = this.execInternal(args, workDir).finally(() => {
+                this.inflightRequests.delete(key);
+            });
+            this.inflightRequests.set(key, promise);
+            return promise;
+        }
+
+        return this.execInternal(args, workDir);
+    }
+
+    private execInternal(args: string[], workDir: string): Promise<GitResult> {
+        const startMs = Date.now();
         logCommand(this.gitBinary, args);
 
         return new Promise<GitResult>((resolve, reject) => {
@@ -77,15 +105,22 @@ export class GitService {
             const stdoutChunks: Buffer[] = [];
             const stderrChunks: Buffer[] = [];
 
+            const timer = setTimeout(() => {
+                proc.kill('SIGTERM');
+                reject(new Error(`Git command timed out after ${DEFAULT_TIMEOUT_MS}ms: git ${args.join(' ')}`));
+            }, DEFAULT_TIMEOUT_MS);
+
             proc.stdout.on('data', (data: Buffer) => stdoutChunks.push(data));
             proc.stderr.on('data', (data: Buffer) => stderrChunks.push(data));
 
             proc.on('error', (err) => {
+                clearTimeout(timer);
                 logError(`Git process error: ${err.message}`);
                 reject(err);
             });
 
             proc.on('close', (code) => {
+                clearTimeout(timer);
                 const stdout = Buffer.concat(stdoutChunks).toString('utf8');
                 const stderr = Buffer.concat(stderrChunks).toString('utf8');
                 logTiming(`git ${args[0]}`, startMs);
@@ -105,14 +140,27 @@ export class GitService {
             stdio: ['pipe', 'pipe', 'pipe'],
         });
 
+        const timer = setTimeout(() => {
+            proc.kill('SIGTERM');
+            logError(`Git stream timed out after ${DEFAULT_TIMEOUT_MS}ms: git ${options.args.join(' ')}`);
+        }, DEFAULT_TIMEOUT_MS);
+
         proc.stdout.on('data', options.onData);
         if (options.onError) {
             proc.stderr.on('data', (data: Buffer) => options.onError!(data.toString()));
         }
         if (options.onClose) {
-            proc.on('close', (code) => options.onClose!(code ?? 1));
+            proc.on('close', (code) => {
+                clearTimeout(timer);
+                options.onClose!(code ?? 1);
+            });
+        } else {
+            proc.on('close', () => {
+                clearTimeout(timer);
+            });
         }
         proc.on('error', (err) => {
+            clearTimeout(timer);
             logError(`Git stream error: ${err.message}`);
         });
 
@@ -134,11 +182,20 @@ export class GitService {
             const stdoutChunks: Buffer[] = [];
             const stderrChunks: Buffer[] = [];
 
+            const timer = setTimeout(() => {
+                proc.kill('SIGTERM');
+                reject(new Error(`Git command timed out after ${DEFAULT_TIMEOUT_MS}ms: git ${args.join(' ')}`));
+            }, DEFAULT_TIMEOUT_MS);
+
             proc.stdout.on('data', (data: Buffer) => stdoutChunks.push(data));
             proc.stderr.on('data', (data: Buffer) => stderrChunks.push(data));
 
-            proc.on('error', reject);
+            proc.on('error', (err) => {
+                clearTimeout(timer);
+                reject(err);
+            });
             proc.on('close', (code) => {
+                clearTimeout(timer);
                 logTiming(`git ${args[0]}`, startMs);
                 resolve({
                     stdout: Buffer.concat(stdoutChunks).toString('utf8'),

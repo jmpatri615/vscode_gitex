@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { BlameService } from './blameService';
 import { BlameEntry } from '../common/types';
 import { configuration } from '../common/configuration';
+import { logError } from '../common/outputChannel';
 import { formatDate } from './blameUtils';
 
 export class BlameStatusBar implements vscode.Disposable {
@@ -42,7 +43,7 @@ export class BlameStatusBar implements vscode.Disposable {
             clearTimeout(this.debounceTimer);
         }
         this.debounceTimer = setTimeout(() => {
-            this.updateStatusBar(editor);
+            this.updateStatusBar(editor).catch(err => logError('Failed to update status bar blame', err));
         }, configuration.blameInlineDelay);
     }
 

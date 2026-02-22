@@ -6,6 +6,7 @@ import {
     CommitDetails, ChangedFile, FileStatus, BranchInfo,
     TagInfo, StashEntry, RepoStatus, GraphViewOptions, FilterOptions
 } from '../common/types';
+import { sanitizeGitPattern } from '../common/validation';
 
 /** Custom log format: NUL-delimited fields, record separator between records */
 const LOG_FORMAT = '%H%x00%h%x00%P%x00%an%x00%ae%x00%at%x00%cn%x00%ce%x00%ct%x00%s%x00%d%x1e';
@@ -29,10 +30,11 @@ export class GitCommands {
         }
 
         if (options.filter?.pattern) {
+            const safePattern = sanitizeGitPattern(options.filter.pattern);
             switch (options.filter.field) {
-                case 'message': args.push(`--grep=${options.filter.pattern}`); break;
-                case 'author': args.push(`--author=${options.filter.pattern}`); break;
-                case 'committer': args.push(`--committer=${options.filter.pattern}`); break;
+                case 'message': args.push(`--grep=${safePattern}`); break;
+                case 'author': args.push(`--author=${safePattern}`); break;
+                case 'committer': args.push(`--committer=${safePattern}`); break;
             }
         }
         if (options.filter?.after) {
@@ -98,16 +100,47 @@ export class GitCommands {
     }
 
     async getChangedFiles(sha: string): Promise<ChangedFile[]> {
-        const result = await this.git.exec([
-            'diff-tree', '--no-commit-id', '-r', '--numstat', '-z', sha
+        // Two parallel queries instead of N+1 per-file status lookups
+        const [statusResult, numstatResult] = await Promise.all([
+            this.git.exec(['diff-tree', '--no-commit-id', '-r', '--name-status', '-z', sha]),
+            this.git.exec(['diff-tree', '--no-commit-id', '-r', '--numstat', '-z', sha]),
         ]);
-        if (result.exitCode !== 0) {
+
+        // Build status map from --name-status -z output
+        // Format: STATUS\0path\0 (or for renames: R###\0oldpath\0newpath\0)
+        const statusMap = new Map<string, { status: FileStatus; oldPath?: string }>();
+        if (statusResult.exitCode === 0) {
+            const parts = statusResult.stdout.split('\0');
+            let si = 0;
+            while (si < parts.length) {
+                const statusStr = parts[si];
+                if (!statusStr) { si++; continue; }
+                const code = statusStr.charAt(0) as FileStatus;
+                if ('MADRCT'.includes(code)) {
+                    if (code === 'R' || code === 'C') {
+                        // Rename/Copy: next two entries are old and new paths
+                        const oldPath = parts[si + 1] || '';
+                        const newPath = parts[si + 2] || '';
+                        statusMap.set(newPath, { status: code, oldPath });
+                        si += 3;
+                    } else {
+                        const filePath = parts[si + 1] || '';
+                        statusMap.set(filePath, { status: code });
+                        si += 2;
+                    }
+                } else {
+                    si++;
+                }
+            }
+        }
+
+        // Parse --numstat -z output and join with status map
+        if (numstatResult.exitCode !== 0) {
             return [];
         }
 
         const files: ChangedFile[] = [];
-        // --numstat -z format: insertions\tdeletions\tpath\0 (or for renames: insertions\tdeletions\t\0oldpath\0newpath\0)
-        const entries = result.stdout.split('\0').filter(s => s.length > 0);
+        const entries = numstatResult.stdout.split('\0').filter(s => s.length > 0);
         let i = 0;
         while (i < entries.length) {
             const line = entries[i];
@@ -123,28 +156,16 @@ export class GitCommands {
                     const oldPath = entries[i] || '';
                     i++;
                     const newPath = entries[i] || '';
-                    files.push({ path: newPath, oldPath, status: 'R', insertions, deletions });
+                    const info = statusMap.get(newPath);
+                    files.push({ path: newPath, oldPath, status: info?.status || 'R', insertions, deletions });
                 } else {
-                    files.push({ path, status: await this.inferFileStatus(sha, path), insertions, deletions });
+                    const info = statusMap.get(path);
+                    files.push({ path, status: info?.status || 'M', insertions, deletions });
                 }
             }
             i++;
         }
         return files;
-    }
-
-    private async inferFileStatus(sha: string, path: string): Promise<FileStatus> {
-        const result = await this.git.exec(['diff-tree', '--no-commit-id', '-r', '--name-status', sha, '--', path]);
-        if (result.exitCode === 0) {
-            const line = result.stdout.trim().split('\n')[0];
-            if (line) {
-                const status = line.charAt(0) as FileStatus;
-                if ('MADRCT'.includes(status)) {
-                    return status;
-                }
-            }
-        }
-        return 'M';
     }
 
     async getFileAtCommit(sha: string, filePath: string): Promise<string> {

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { BlameService } from './blameService';
 import { BlameEntry } from '../common/types';
 import { configuration } from '../common/configuration';
+import { logError } from '../common/outputChannel';
 import { formatDate } from './blameUtils';
 
 export class BlameDecorationManager implements vscode.Disposable {
@@ -58,7 +59,7 @@ export class BlameDecorationManager implements vscode.Disposable {
             clearTimeout(this.debounceTimer);
         }
         this.debounceTimer = setTimeout(() => {
-            this.updateInlineBlame(editor);
+            this.updateInlineBlame(editor).catch(err => logError('Failed to update inline blame', err));
         }, configuration.blameInlineDelay);
     }
 

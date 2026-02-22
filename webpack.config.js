@@ -3,6 +3,7 @@
 
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 
 /** @type {import('webpack').Configuration} */
 const extensionConfig = {
@@ -28,6 +29,9 @@ const extensionConfig = {
         use: [{ loader: 'ts-loader' }],
       },
     ],
+  },
+  optimization: {
+    usedExports: true,
   },
   experiments: {
     asyncWebAssembly: true,
@@ -70,6 +74,9 @@ const graphWebviewConfig = {
       },
     ],
   },
+  optimization: {
+    minimizer: ['...', new CssMinimizerPlugin()],
+  },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'graph.css' }),
   ],
@@ -107,6 +114,9 @@ const commitDetailsWebviewConfig = {
         use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
     ],
+  },
+  optimization: {
+    minimizer: ['...', new CssMinimizerPlugin()],
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'commitDetails.css' }),

@@ -27,6 +27,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
         log('No workspace folder open');
+        vscode.commands.executeCommand('setContext', 'gitex:hasRepository', false);
         return;
     }
 
@@ -40,10 +41,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             'GitEx: No git repository found in this workspace.',
         );
         log('Git not found or not a repository');
+        vscode.commands.executeCommand('setContext', 'gitex:hasRepository', false);
         return;
     }
 
     log(`Git repository found at ${gitService.getRepoRoot()}`);
+    vscode.commands.executeCommand('setContext', 'gitex:hasRepository', true);
 
     // Load WASM (non-blocking — falls back to TS if unavailable)
     loadWasm(context.extensionPath).catch(err => {
@@ -98,14 +101,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Register diff commands
     context.subscriptions.push(
-        vscode.commands.registerCommand('gitex.showCommitDetails', (sha: string) => {
-            if (sha) { commitDetailsProvider.show(sha); }
+        vscode.commands.registerCommand('gitex.showCommitDetails', async (sha: string) => {
+            if (sha) { await commitDetailsProvider.show(sha); }
         }),
-        vscode.commands.registerCommand('gitex.compareCommits', (sha1: string, sha2: string) => {
-            if (sha1 && sha2) { commitComparisonProvider.compare(sha1, sha2); }
+        vscode.commands.registerCommand('gitex.compareCommits', async (sha1: string, sha2: string) => {
+            if (sha1 && sha2) { await commitComparisonProvider.compare(sha1, sha2); }
         }),
-        vscode.commands.registerCommand('gitex.compareWithWorkingTree', (sha: string) => {
-            if (sha) { diffService.compareWithWorkingTree(sha); }
+        vscode.commands.registerCommand('gitex.compareWithWorkingTree', async (sha: string) => {
+            if (sha) { await diffService.compareWithWorkingTree(sha); }
         }),
     );
 

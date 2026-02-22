@@ -155,8 +155,8 @@ export function appendToLayout(handle: number, rawLog: Buffer): LayoutResult {
         try {
             const result = wasm.append_to_layout(handle, new Uint8Array(rawLog));
             return JSON.parse(result);
-        } catch {
-            // Fall through
+        } catch (error) {
+            log(`WASM append failed, falling back: ${error}`);
         }
     }
     // For TS fallback, just recompute
@@ -169,7 +169,7 @@ export function appendToLayout(handle: number, rawLog: Buffer): LayoutResult {
 export function freeLayout(handle: number): void {
     const wasm = getWasm();
     if (wasm) {
-        try { wasm.free_layout(handle); } catch { /* ignore */ }
+        try { wasm.free_layout(handle); } catch (error) { log(`WASM free_layout failed: ${error}`); }
     }
 }
 
@@ -185,8 +185,8 @@ export function parseBlame(rawBlame: Buffer): BlameEntry[] {
             const result = wasm.parse_blame(new Uint8Array(rawBlame));
             logTiming('WASM parse_blame', startMs);
             return JSON.parse(result);
-        } catch {
-            log('WASM blame parse failed, falling back to TS');
+        } catch (error) {
+            log(`WASM blame parse failed, falling back to TS: ${error}`);
         }
     }
 
@@ -203,7 +203,7 @@ export function filterCommits(handle: number, field: string, pattern: string): L
     if (wasm) {
         try {
             return JSON.parse(wasm.filter_commits(handle, field, pattern));
-        } catch { /* fall through */ }
+        } catch (error) { log(`WASM filter_commits failed: ${error}`); }
     }
     return []; // Client-side filtering handled in webview for TS fallback
 }
@@ -216,7 +216,7 @@ export function filterByDate(handle: number, after: number, before: number): Lay
     if (wasm) {
         try {
             return JSON.parse(wasm.filter_by_date(handle, after, before));
-        } catch { /* fall through */ }
+        } catch (error) { log(`WASM filter_by_date failed: ${error}`); }
     }
     return [];
 }

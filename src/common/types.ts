@@ -143,3 +143,30 @@ export interface RepoStatus {
     isMerging: boolean;
     isRebasing: boolean;
 }
+
+// --- Webview Message Types ---
+
+export type WebviewIncomingMessage =
+    | { type: 'ready' }
+    | { type: 'requestPage'; skip: number; count: number }
+    | { type: 'commitClick'; sha: string }
+    | { type: 'commitDblClick'; sha: string }
+    | { type: 'contextMenu'; sha: string }
+    | { type: 'filterChange'; field: FilterOptions['field']; pattern: string }
+    | { type: 'dateFilterChange'; after: number; before: number }
+    | { type: 'saveState'; state: unknown };
+
+export type WebviewOutgoingMessage =
+    | { type: 'layoutData'; data: LayoutResult; append: boolean }
+    | { type: 'updateTotalCount'; count: number }
+    | { type: 'themeChanged' }
+    | { type: 'setSelection'; sha: string };
+
+export type CommitDetailIncomingMessage =
+    | { type: 'openDiff'; sha: string }
+    | { type: 'navigateToParent'; sha: string }
+    | { type: 'openFile'; sha: string }
+    | { type: 'copySha'; sha: string };
+
+export type ComparisonIncomingMessage =
+    | { type: 'openDiff'; path: string };

@@ -20,9 +20,10 @@
     "gitextensions"
   ],
   "activationEvents": [
-    "onLanguage:*"
+    "workspaceContains:.git"
   ],
   "main": "./dist/extension.js",
+  "sideEffects": false,
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -208,6 +209,120 @@
           "command": "gitex.refreshGraph",
           "when": "view == gitex.graphView",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "gitex.openGraph",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.refreshGraph",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.toggleBlame",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.toggleInlineBlame",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.jumpToCommit",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.showCommitDetails",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.compareCommits",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.compareWithWorkingTree",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.checkoutRevision",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.checkoutBranch",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.createBranch",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.createTag",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.mergeBranch",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.rebaseBranch",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.interactiveRebase",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.cherryPick",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.cherryPickSelected",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.resetSoft",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.resetMixed",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.resetHard",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.revertCommit",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.stashChanges",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.stashPop",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.stashApply",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.stashDrop",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.copySha",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.copyShortSha",
+          "when": "gitex:hasRepository"
+        },
+        {
+          "command": "gitex.copyMessage",
+          "when": "gitex:hasRepository"
         }
       ]
     },
@@ -442,9 +557,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack",
+    "compile": "npm run build:wasm --if-present && webpack",
     "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
+    "package": "npm run build:wasm --if-present && webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p ./test/tsconfig.json",
     "watch-tests": "tsc -p ./test/tsconfig.json -w",
     "lint": "eslint src --ext ts",
@@ -452,6 +567,7 @@
     "build:wasm": "cd core && wasm-pack build --target nodejs --out-dir ../wasm-pkg"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
@@ -459,11 +575,10 @@
     "@typescript-eslint/parser": "^6.15.0",
     "@vscode/test-electron": "^2.3.8",
     "css-loader": "^6.9.0",
+    "css-minimizer-webpack-plugin": "^6.0.0",
     "eslint": "^8.56.0",
-    "html-webpack-plugin": "^5.6.0",
     "mini-css-extract-plugin": "^2.7.7",
     "mocha": "^10.2.0",
-    "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.89.0",

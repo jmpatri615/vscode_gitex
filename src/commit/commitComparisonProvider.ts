@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { GitCommands } from '../git/gitCommands';
-import { ChangedFile } from '../common/types';
+import { ChangedFile, ComparisonIncomingMessage } from '../common/types';
 import { logError } from '../common/outputChannel';
 
 export class CommitComparisonProvider {
@@ -35,9 +35,13 @@ export class CommitComparisonProvider {
                 { enableScripts: true }
             );
             this.panel.onDidDispose(() => { this.panel = undefined; });
-            this.panel.webview.onDidReceiveMessage(message => {
-                if (message.type === 'openDiff') {
-                    this.openDiffForFile(sha1, sha2, message.path);
+            this.panel.webview.onDidReceiveMessage(async (message: ComparisonIncomingMessage) => {
+                try {
+                    if (message.type === 'openDiff') {
+                        await this.openDiffForFile(sha1, sha2, message.path);
+                    }
+                } catch (error) {
+                    logError('Error handling comparison message', error);
                 }
             });
         }
