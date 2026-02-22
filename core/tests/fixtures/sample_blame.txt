@@ -1,0 +1,46 @@
+a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 1 1 5
+author Alice Smith
+author-mail <alice@example.com>
+author-time 1700010000
+author-tz +0000
+committer Alice Smith
+committer-mail <alice@example.com>
+committer-time 1700010000
+committer-tz +0000
+summary Add main entry point
+filename src/main.rs
+b3c4d5e6f7a8b3c4d5e6f7a8b3c4d5e6f7a8b3c4 6 6 3
+author Bob Jones
+author-mail <bob@example.com>
+author-time 1700008000
+author-tz -0500
+committer Bob Jones
+committer-mail <bob@example.com>
+committer-time 1700008000
+committer-tz -0500
+summary Refactor error handling
+previous a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 src/main.rs
+filename src/main.rs
+d4e5f6a7b8c9d4e5f6a7b8c9d4e5f6a7b8c9d4e5 9 9 2
+author Charlie Lee
+author-mail <charlie@example.com>
+author-time 1700006000
+author-tz +0100
+committer Charlie Lee
+committer-mail <charlie@example.com>
+committer-time 1700006000
+committer-tz +0100
+summary Fix off-by-one error in blame parser
+previous b3c4d5e6f7a8b3c4d5e6f7a8b3c4d5e6f7a8b3c4 src/main.rs
+filename src/main.rs
+a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 11 11 4
+author Alice Smith
+author-mail <alice@example.com>
+author-time 1700010000
+author-tz +0000
+committer Alice Smith
+committer-mail <alice@example.com>
+committer-time 1700010000
+committer-tz +0000
+summary Add main entry point
+filename src/main.rs

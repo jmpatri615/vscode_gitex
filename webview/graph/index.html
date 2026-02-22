@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none';
+                   style-src ${cspSource} 'unsafe-inline';
+                   script-src 'nonce-${nonce}';
+                   img-src ${cspSource};">
+    <link rel="stylesheet" href="${stylesCommonUri}">
+    <link rel="stylesheet" href="${stylesGraphUri}">
+    <title>GitEx - Commit Graph</title>
+</head>
+<body>
+    <!-- Toolbar -->
+    <div id="toolbar" class="toolbar">
+        <button id="btn-refresh" class="toolbar-btn" title="Refresh (Ctrl+Shift+G R)">
+            <span class="codicon codicon-refresh"></span>
+        </button>
+        <button id="btn-all-branches" class="toolbar-btn active" title="All Branches">
+            <span class="codicon codicon-git-branch"></span> All
+        </button>
+        <button id="btn-current-branch" class="toolbar-btn" title="Current Branch">
+            <span class="codicon codicon-git-commit"></span> Current
+        </button>
+        <span class="toolbar-separator"></span>
+        <button id="btn-filter" class="toolbar-btn" title="Filter (Ctrl+F)">
+            <span class="codicon codicon-search"></span>
+        </button>
+        <span class="toolbar-spacer"></span>
+        <span id="commit-count" class="toolbar-info"></span>
+    </div>
+
+    <!-- Filter bar (hidden by default) -->
+    <div id="filter-container"></div>
+
+    <!-- Column headers -->
+    <div id="column-headers" class="column-headers"></div>
+
+    <!-- Main scroll container with canvas -->
+    <div id="scroll-container" class="scroll-container">
+        <div id="scroll-spacer" class="scroll-spacer">
+            <canvas id="graph-canvas" class="graph-canvas"></canvas>
+        </div>
+    </div>
+
+    <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>

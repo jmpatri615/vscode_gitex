@@ -1,0 +1,252 @@
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* ─── Toolbar ────────────────────────────────────────────────────────────── */
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: var(--vscode-editorGroupHeader-tabsBackground, #252526);
+    border-bottom: 1px solid var(--vscode-panel-border, #444444);
+    flex-shrink: 0;
+    gap: 2px;
+    height: 32px;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    height: 24px;
+    background: transparent;
+    color: var(--vscode-icon-foreground, #c5c5c5);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+    background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.toolbar-btn.active {
+    background-color: var(--vscode-toolbar-activeBackground, rgba(99, 102, 103, 0.31));
+    color: var(--vscode-editor-foreground, #cccccc);
+}
+
+.toolbar-separator {
+    width: 1px;
+    height: 16px;
+    background-color: var(--vscode-panel-border, #444444);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+.toolbar-info {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground, #999999);
+    padding-right: 4px;
+}
+
+/* ─── Filter Bar ─────────────────────────────────────────────────────────── */
+
+.filter-bar {
+    background-color: var(--vscode-editorWidget-background, #252526);
+    border-bottom: 1px solid var(--vscode-panel-border, #444444);
+    padding: 6px 8px;
+    flex-shrink: 0;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-row + .filter-row {
+    margin-top: 4px;
+}
+
+.filter-field-select {
+    width: 110px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.filter-input {
+    flex: 1;
+    height: 24px;
+    min-width: 100px;
+}
+
+.filter-close-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    color: var(--vscode-icon-foreground, #c5c5c5);
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.filter-close-btn:hover {
+    background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.filter-date-label {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground, #999999);
+    flex-shrink: 0;
+}
+
+.filter-date-input {
+    height: 24px;
+    width: 130px;
+    flex-shrink: 0;
+}
+
+.filter-clear-dates-btn {
+    height: 24px;
+    padding: 0 8px;
+    background: transparent;
+    color: var(--vscode-textLink-foreground, #3794ff);
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.filter-clear-dates-btn:hover {
+    text-decoration: underline;
+}
+
+/* ─── Column Headers ─────────────────────────────────────────────────────── */
+
+.column-headers {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    background-color: var(--vscode-editorGroupHeader-tabsBackground, #252526);
+    border-bottom: 1px solid var(--vscode-panel-border, #444444);
+    flex-shrink: 0;
+    user-select: none;
+    overflow: hidden;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    height: 100%;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--vscode-descriptionForeground, #999999);
+    position: relative;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.column-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 1;
+}
+
+.column-resize-handle:hover {
+    background-color: var(--vscode-focusBorder, #007fd4);
+}
+
+/* ─── Scroll Container ───────────────────────────────────────────────────── */
+
+.scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    outline: none;
+}
+
+.scroll-spacer {
+    position: relative;
+    width: 100%;
+    /* Height is set dynamically by virtualScroll.ts */
+}
+
+/* ─── Canvas ─────────────────────────────────────────────────────────────── */
+
+.graph-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* Width/height are set dynamically by canvasRenderer.ts */
+    pointer-events: auto;
+}
+
+/* ─── Selection Highlight (CSS overlay, optional fallback) ───────────────── */
+
+.row-selected {
+    background-color: var(--vscode-list-activeSelectionBackground, #094771);
+}
+
+.row-selected-secondary {
+    background-color: var(--vscode-list-inactiveSelectionBackground, #37373d);
+}
+
+/* ─── Badges (DOM-based fallback; canvas draws them directly) ────────────── */
+
+.badge {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    line-height: 14px;
+    white-space: nowrap;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.badge-branch {
+    background-color: var(--vscode-badge-background, #3a6ea5);
+    color: var(--vscode-badge-foreground, #ffffff);
+}
+
+.badge-tag {
+    background-color: #6a5a2a;
+    color: #ffffff;
+    border-radius: 2px;
+}
+
+.badge-head {
+    font-weight: bold;
+}
+
+.badge-remote {
+    font-style: italic;
+    opacity: 0.85;
+}

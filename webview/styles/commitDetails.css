@@ -1,0 +1,248 @@
+/* ─── Commit Details Layout ──────────────────────────────────────────────── */
+
+body {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.commit-details-content {
+    padding: 12px 16px;
+    max-width: 100%;
+}
+
+/* ─── Empty State ────────────────────────────────────────────────────────── */
+
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: var(--vscode-descriptionForeground, #999999);
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* ─── Commit Header ──────────────────────────────────────────────────────── */
+
+.commit-header {
+    margin-bottom: 12px;
+}
+
+.commit-subject {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--vscode-editor-foreground, #cccccc);
+    line-height: 1.3;
+    word-wrap: break-word;
+}
+
+/* ─── SHA Section ────────────────────────────────────────────────────────── */
+
+.commit-sha-section {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.meta-label {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground, #999999);
+    flex-shrink: 0;
+}
+
+.sha-value {
+    font-family: var(--vscode-editor-fontFamily, "Consolas", "Courier New", monospace);
+    font-size: 12px;
+    color: var(--vscode-textLink-foreground, #3794ff);
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 3px;
+    word-break: break-all;
+    transition: background-color 0.15s ease;
+}
+
+.sha-value:hover {
+    background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.sha-value.copied-flash {
+    background-color: var(--vscode-inputValidation-infoBackground, #063b49);
+    color: var(--vscode-inputValidation-infoForeground, #b5cea8);
+}
+
+/* ─── Parents ────────────────────────────────────────────────────────────── */
+
+.commit-parents {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.parent-link {
+    font-family: var(--vscode-editor-fontFamily, "Consolas", "Courier New", monospace);
+    font-size: 12px;
+    color: var(--vscode-textLink-foreground, #3794ff);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.parent-link:hover {
+    background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+    text-decoration: none;
+}
+
+/* ─── Metadata Table ─────────────────────────────────────────────────────── */
+
+.commit-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+    font-size: 12px;
+}
+
+.commit-meta-table th {
+    text-align: left;
+    padding: 3px 12px 3px 0;
+    color: var(--vscode-descriptionForeground, #999999);
+    font-weight: 500;
+    white-space: nowrap;
+    width: 100px;
+    vertical-align: top;
+}
+
+.commit-meta-table td {
+    padding: 3px 0;
+    color: var(--vscode-editor-foreground, #cccccc);
+    word-break: break-word;
+}
+
+/* ─── Commit Message Body ────────────────────────────────────────────────── */
+
+.commit-body {
+    margin-bottom: 16px;
+}
+
+.commit-message {
+    font-family: var(--vscode-editor-fontFamily, "Consolas", "Courier New", monospace);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--vscode-editor-foreground, #cccccc);
+    background-color: var(--vscode-textBlockQuote-background, rgba(127, 127, 127, 0.1));
+    border-left: 3px solid var(--vscode-textBlockQuote-border, rgba(127, 127, 127, 0.3));
+    padding: 8px 12px;
+    margin-top: 4px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    border-radius: 0 3px 3px 0;
+}
+
+/* ─── Changed Files ──────────────────────────────────────────────────────── */
+
+.commit-files {
+    margin-bottom: 16px;
+}
+
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 0;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 3px 4px;
+    gap: 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: default;
+}
+
+.file-item:hover {
+    background-color: var(--vscode-list-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+/* ── Status Badge ── */
+
+.file-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 2px;
+    flex-shrink: 0;
+    text-align: center;
+    line-height: 16px;
+}
+
+.file-status-added .file-status-badge {
+    color: var(--vscode-gitDecoration-addedResourceForeground, #81b88b);
+    background-color: rgba(129, 184, 139, 0.15);
+}
+
+.file-status-modified .file-status-badge {
+    color: var(--vscode-gitDecoration-modifiedResourceForeground, #e2c08d);
+    background-color: rgba(226, 192, 141, 0.15);
+}
+
+.file-status-deleted .file-status-badge {
+    color: var(--vscode-gitDecoration-deletedResourceForeground, #c74e39);
+    background-color: rgba(199, 78, 57, 0.15);
+}
+
+.file-status-renamed .file-status-badge {
+    color: var(--vscode-gitDecoration-renamedResourceForeground, #73c991);
+    background-color: rgba(115, 201, 145, 0.15);
+}
+
+.file-status-copied .file-status-badge {
+    color: var(--vscode-gitDecoration-addedResourceForeground, #81b88b);
+    background-color: rgba(129, 184, 139, 0.15);
+}
+
+.file-status-unknown .file-status-badge {
+    color: var(--vscode-descriptionForeground, #999999);
+    background-color: rgba(153, 153, 153, 0.15);
+}
+
+/* ── File Path ── */
+
+.file-path {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--vscode-editor-fontFamily, "Consolas", "Courier New", monospace);
+    font-size: 12px;
+    color: var(--vscode-editor-foreground, #cccccc);
+}
+
+.file-path:hover {
+    color: var(--vscode-textLink-foreground, #3794ff);
+    text-decoration: underline;
+}
+
+/* ── File Stats ── */
+
+.file-stats {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    font-family: var(--vscode-editor-fontFamily, "Consolas", "Courier New", monospace);
+    font-size: 11px;
+}
+
+.stat-add {
+    color: var(--vscode-gitDecoration-addedResourceForeground, #81b88b);
+}
+
+.stat-del {
+    color: var(--vscode-gitDecoration-deletedResourceForeground, #c74e39);
+}

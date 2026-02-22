@@ -1,0 +1,472 @@
+{
+  "name": "gitex",
+  "displayName": "GitEx",
+  "description": "Enhanced Git visualization and operations — Git graph, blame, and diff in VS Code",
+  "version": "1.0.0",
+  "publisher": "gitex",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers"
+  ],
+  "keywords": [
+    "git",
+    "graph",
+    "blame",
+    "diff",
+    "history",
+    "gitextensions"
+  ],
+  "activationEvents": [
+    "onLanguage:*"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitex",
+          "title": "GitEx",
+          "icon": "resources/icons/gitex.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitex": [
+        {
+          "type": "webview",
+          "id": "gitex.graphView",
+          "name": "Commit Graph"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "gitex.openGraph",
+        "title": "Open Git Graph",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.toggleBlame",
+        "title": "Toggle File Blame",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.toggleInlineBlame",
+        "title": "Toggle Inline Blame",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.jumpToCommit",
+        "title": "Jump to Commit...",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.showCommitDetails",
+        "title": "Show Commit Details",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.compareCommits",
+        "title": "Compare Two Commits",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.compareWithWorkingTree",
+        "title": "Compare with Working Tree",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.refreshGraph",
+        "title": "Refresh Graph",
+        "category": "GitEx",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "gitex.checkoutRevision",
+        "title": "Checkout Revision",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.checkoutBranch",
+        "title": "Checkout Branch",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.createBranch",
+        "title": "Create Branch Here...",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.createTag",
+        "title": "Create Tag Here...",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.mergeBranch",
+        "title": "Merge into Current Branch",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.rebaseBranch",
+        "title": "Rebase Current Branch onto This",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.interactiveRebase",
+        "title": "Interactive Rebase...",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.cherryPick",
+        "title": "Cherry-pick This Commit",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.cherryPickSelected",
+        "title": "Cherry-pick Selected Commits",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.resetSoft",
+        "title": "Reset (Soft)",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.resetMixed",
+        "title": "Reset (Mixed)",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.resetHard",
+        "title": "Reset (Hard)",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.revertCommit",
+        "title": "Revert This Commit",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.stashChanges",
+        "title": "Stash Changes...",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.stashPop",
+        "title": "Pop Stash",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.stashApply",
+        "title": "Apply Stash",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.stashDrop",
+        "title": "Drop Stash",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.copySha",
+        "title": "Copy SHA",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.copyShortSha",
+        "title": "Copy Short SHA",
+        "category": "GitEx"
+      },
+      {
+        "command": "gitex.copyMessage",
+        "title": "Copy Commit Message",
+        "category": "GitEx"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "gitex.openGraph",
+        "key": "ctrl+shift+g g",
+        "mac": "cmd+shift+g g"
+      },
+      {
+        "command": "gitex.toggleBlame",
+        "key": "ctrl+shift+g b",
+        "mac": "cmd+shift+g b"
+      },
+      {
+        "command": "gitex.jumpToCommit",
+        "key": "ctrl+shift+g j",
+        "mac": "cmd+shift+g j"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "gitex.refreshGraph",
+          "when": "view == gitex.graphView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "colors": [
+      {
+        "id": "gitex.graph.background",
+        "description": "Background color of the git graph",
+        "defaults": {
+          "dark": "#1e1e1e",
+          "light": "#ffffff",
+          "highContrast": "#000000"
+        }
+      },
+      {
+        "id": "gitex.graph.nodeColor",
+        "description": "Default node color in the git graph",
+        "defaults": {
+          "dark": "#569cd6",
+          "light": "#0066b8",
+          "highContrast": "#569cd6"
+        }
+      },
+      {
+        "id": "gitex.graph.headIndicator",
+        "description": "Color of the HEAD indicator",
+        "defaults": {
+          "dark": "#dcdcaa",
+          "light": "#795e26",
+          "highContrast": "#dcdcaa"
+        }
+      },
+      {
+        "id": "gitex.graph.selectionBackground",
+        "description": "Background color of selected row in graph",
+        "defaults": {
+          "dark": "#264f7840",
+          "light": "#0060c040",
+          "highContrast": "#264f78"
+        }
+      },
+      {
+        "id": "gitex.blame.inlineColor",
+        "description": "Color of inline blame annotations",
+        "defaults": {
+          "dark": "#99999959",
+          "light": "#99999959",
+          "highContrast": "#99999999"
+        }
+      },
+      {
+        "id": "gitex.blame.gutterRecentColor",
+        "description": "Gutter blame color for recent commits",
+        "defaults": {
+          "dark": "#e2c08d",
+          "light": "#c17e17",
+          "highContrast": "#e2c08d"
+        }
+      },
+      {
+        "id": "gitex.blame.gutterOldColor",
+        "description": "Gutter blame color for old commits",
+        "defaults": {
+          "dark": "#4a6a9b",
+          "light": "#4a6a9b",
+          "highContrast": "#4a6a9b"
+        }
+      }
+    ],
+    "configuration": {
+      "title": "GitEx",
+      "properties": {
+        "gitex.git.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to git executable. Leave empty to use system PATH."
+        },
+        "gitex.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh the graph when repository changes are detected."
+        },
+        "gitex.autoRefreshDebounce": {
+          "type": "number",
+          "default": 500,
+          "description": "Debounce interval (ms) for auto-refresh."
+        },
+        "gitex.graph.defaultView": {
+          "type": "string",
+          "default": "allBranches",
+          "enum": [
+            "allBranches",
+            "currentBranch"
+          ],
+          "description": "Default graph view mode."
+        },
+        "gitex.graph.showRemoteBranches": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show remote branches in the graph."
+        },
+        "gitex.graph.showTags": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show tags in the graph."
+        },
+        "gitex.graph.showStashes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show stashes in the graph."
+        },
+        "gitex.graph.rowHeight": {
+          "type": "number",
+          "default": 24,
+          "description": "Height of each row in the graph (pixels)."
+        },
+        "gitex.graph.laneWidth": {
+          "type": "number",
+          "default": 16,
+          "description": "Width of each lane in the graph (pixels)."
+        },
+        "gitex.graph.pageSize": {
+          "type": "number",
+          "default": 500,
+          "description": "Number of commits to fetch per page."
+        },
+        "gitex.graph.scrollBuffer": {
+          "type": "number",
+          "default": 50,
+          "description": "Number of buffer rows above and below the visible area."
+        },
+        "gitex.graph.branchColors": {
+          "type": "object",
+          "default": {},
+          "description": "Custom branch color overrides. Map branch names to hex colors."
+        },
+        "gitex.graph.dateFormat": {
+          "type": "string",
+          "default": "relative",
+          "enum": [
+            "relative",
+            "iso",
+            "locale"
+          ],
+          "description": "Date format in the graph."
+        },
+        "gitex.blame.inline.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline blame annotation for the current line."
+        },
+        "gitex.blame.inline.format": {
+          "type": "string",
+          "default": "${author}, ${date} - ${message}",
+          "description": "Format for inline blame annotations."
+        },
+        "gitex.blame.inline.dateFormat": {
+          "type": "string",
+          "default": "relative",
+          "enum": [
+            "relative",
+            "iso",
+            "locale"
+          ],
+          "description": "Date format for inline blame."
+        },
+        "gitex.blame.inline.delay": {
+          "type": "number",
+          "default": 150,
+          "description": "Delay (ms) before showing inline blame after cursor move."
+        },
+        "gitex.blame.statusBar.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show blame information in the status bar."
+        },
+        "gitex.blame.gutter.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show blame annotations in the gutter."
+        },
+        "gitex.blame.gutter.colorMode": {
+          "type": "string",
+          "default": "age",
+          "enum": [
+            "age",
+            "author"
+          ],
+          "description": "Gutter blame coloring mode."
+        },
+        "gitex.blame.hover.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show rich hover on blame annotations."
+        },
+        "gitex.blame.cacheSize": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum number of files to cache blame data for."
+        },
+        "gitex.blame.ignoreRevs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use .git-blame-ignore-revs file if present."
+        },
+        "gitex.blame.ignoreWhitespace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ignore whitespace changes in blame."
+        },
+        "gitex.operations.confirmHardReset": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show confirmation dialog before hard reset."
+        },
+        "gitex.operations.confirmStashDrop": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show confirmation dialog before dropping a stash."
+        },
+        "gitex.operations.autoStashOnRebase": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically stash changes before rebase."
+        },
+        "gitex.operations.mergeNoFf": {
+          "type": "boolean",
+          "default": false,
+          "description": "Always create a merge commit (no fast-forward)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p ./test/tsconfig.json",
+    "watch-tests": "tsc -p ./test/tsconfig.json -w",
+    "lint": "eslint src --ext ts",
+    "test": "npm run compile-tests && node ./out/test/runTest.js",
+    "build:wasm": "cd core && wasm-pack build --target nodejs --out-dir ../wasm-pkg"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vscode/test-electron": "^2.3.8",
+    "css-loader": "^6.9.0",
+    "eslint": "^8.56.0",
+    "html-webpack-plugin": "^5.6.0",
+    "mini-css-extract-plugin": "^2.7.7",
+    "mocha": "^10.2.0",
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

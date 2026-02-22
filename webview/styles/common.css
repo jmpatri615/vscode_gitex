@@ -1,0 +1,137 @@
+/* ─── Base Reset & Variables ─────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--vscode-editor-background, #1e1e1e);
+    color: var(--vscode-editor-foreground, #cccccc);
+    font-family: var(--vscode-font-family, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
+    font-size: var(--vscode-font-size, 13px);
+    line-height: 1.4;
+}
+
+/* ─── Focus Indicator ────────────────────────────────────────────────────── */
+
+:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #007fd4);
+    outline-offset: -1px;
+}
+
+/* ─── Links ──────────────────────────────────────────────────────────────── */
+
+a {
+    color: var(--vscode-textLink-foreground, #3794ff);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+a:hover {
+    color: var(--vscode-textLink-activeForeground, #3794ff);
+    text-decoration: underline;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+
+button {
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--vscode-button-foreground, #ffffff);
+    background-color: var(--vscode-button-background, #0e639c);
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+button:hover {
+    background-color: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+button:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #007fd4);
+}
+
+/* ─── Inputs ─────────────────────────────────────────────────────────────── */
+
+input[type="text"],
+input[type="date"],
+select {
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--vscode-input-foreground, #cccccc);
+    background-color: var(--vscode-input-background, #3c3c3c);
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    padding: 3px 6px;
+    border-radius: 2px;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+select:focus {
+    border-color: var(--vscode-focusBorder, #007fd4);
+    outline: none;
+}
+
+input::placeholder {
+    color: var(--vscode-input-placeholderForeground, #a0a0a0);
+}
+
+/* ─── Scrollbar Styling ──────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+}
+
+::-webkit-scrollbar-thumb:active {
+    background-color: var(--vscode-scrollbarSlider-activeBackground, rgba(191, 191, 191, 0.4));
+}
+
+/* ─── Utility Classes ────────────────────────────────────────────────────── */
+
+.hidden {
+    display: none !important;
+}
+
+.mono {
+    font-family: var(--vscode-editor-fontFamily, "Consolas", "Courier New", monospace);
+}
+
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.section-label {
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--vscode-descriptionForeground, #999999);
+    padding: 8px 0 4px;
+    border-bottom: 1px solid var(--vscode-panel-border, #444444);
+    margin-bottom: 4px;
+}
